@@ -7,8 +7,6 @@ import static com.YAIndustries.fileshare.utilities.Utils.showToast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.ChecksSdkIntAtLeast;
-import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.BroadcastReceiver;
