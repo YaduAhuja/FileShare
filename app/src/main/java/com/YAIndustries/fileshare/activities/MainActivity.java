@@ -9,6 +9,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.IntentFilter;
@@ -32,11 +33,14 @@ import android.widget.Toast;
 import android.view.View;
 
 import com.YAIndustries.fileshare.R;
+import com.YAIndustries.fileshare.models.FileMetaData;
 import com.YAIndustries.fileshare.services.MyBroadcastReceiver;
 import com.YAIndustries.fileshare.utilities.Utils;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.android.material.textfield.TextInputLayout;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -47,13 +51,8 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Observable;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.ThreadPoolExecutor;
 
 public class MainActivity extends AppCompatActivity implements OnClickListener {
     private Button sendButton, receiveButton, testButton, searchButton;
@@ -148,7 +147,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
             ServerSocket serverSocket = new ServerSocket(0);
             Log.d("Server Creation ", "Port "+ serverSocket.getLocalPort());
             runOnUiThread(()-> {
-                portAddress.getEditText().setText(Integer.toString(serverSocket.getLocalPort()));
+                portAddress.getEditText().setText(serverSocket.getLocalPort()+"");
             });
             Log.d("Server Creation", "Address" + serverSocket.getInetAddress().toString());
             Socket client = serverSocket.accept();
@@ -313,18 +312,42 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                 showToast(this, "Storage Permission not Granted", Toast.LENGTH_SHORT);
                 return;
             }
-            if(filePath == null) {
-                filePicker.launch("*/*");
-                return;
-            }
+//            if(filePath == null) {
+//                filePicker.launch("*/*");
+//                return;
+//            }
 
             try {
-                var resolver = Environment.getExternalStorageDirectory().toString()+"/Download/Fileshare/"+ System.currentTimeMillis()+".jpg";
-                File f = new File(resolver);
+                var f = new File(Environment.getExternalStorageDirectory().toString()+"/Download/Fileshare");
+                f.mkdir();
+                String tempFilePath = Environment.getExternalStorageDirectory().toString()+"/Download/FileShare/temp.bin";
+                f = new File(Environment.getExternalStorageDirectory().toString()+"/Download/OS Masternotes.pdf");
+                var metaData = new FileMetaData();
+                metaData.name = f.getName();
+                metaData.size = f.length();
+                var fis = new FileInputStream(f);
+                f = new File(tempFilePath);
+                f.createNewFile();
+                var payload = new ObjectMapper().writeValueAsString(metaData);
+                var testFos = new FileOutputStream(f);
+                int c ;
+                testFos.write(payload.getBytes());
+                testFos.write(0);
+                Utils.copyFile(this, fis, testFos);
+
+                StringBuilder sb = new StringBuilder();
+                fis = new FileInputStream(Environment.getExternalStorageDirectory().toString()+"/Download/FileShare/temp.bin");
+                while((c = fis.read()) != 0){
+                    sb.append((char)c);
+                }
+                var recPayload = sb.toString();
+                metaData = new ObjectMapper().readValue(recPayload, FileMetaData.class);
+                var resolver = Environment.getExternalStorageDirectory().toString()+"/Download/Fileshare/"+ metaData.name;
+                f = new File(resolver);
                 f.getParentFile().mkdir();
-                var inputStream = getContentResolver().openInputStream(filePath);
+//                var inputStream = getContentResolver().openInputStream(filePath);
                 var fos = new FileOutputStream(f);
-                Utils.copyFile(this, inputStream, fos);
+                Utils.copyFile(this, fis, fos);
             } catch (Exception e) {
                 e.printStackTrace();
             }
