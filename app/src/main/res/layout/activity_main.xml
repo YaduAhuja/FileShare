@@ -13,7 +13,7 @@
         android:text="Send"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/search_button"
         app:layout_constraintBottom_toTopOf="@id/receiveButton"/>
 
     <Button
@@ -32,7 +32,7 @@
         android:layout_height="wrap_content"
         android:clickable="true"
         android:text="Device List"
-        app:layout_constraintBottom_toTopOf="@id/filePathView"
+        app:layout_constraintBottom_toTopOf="@id/testStorage"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/receiveButton" />
@@ -42,10 +42,10 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="File Path"
-        app:layout_constraintBottom_toTopOf="@id/portFieldLayout"
+        app:layout_constraintBottom_toTopOf="@id/fileProgress"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/deviceListView" />
+        app:layout_constraintTop_toBottomOf="@+id/testStorage" />
 
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="409dp"
@@ -54,7 +54,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/filePathView">
+        app:layout_constraintTop_toBottomOf="@+id/fileProgress">
 
         <com.google.android.material.textfield.TextInputEditText
             android:layout_width="match_parent"
@@ -98,6 +98,19 @@
             android:hint="IP Address" />
     </com.google.android.material.textfield.TextInputLayout>
 
+    <ProgressBar
+        android:id="@+id/fileProgress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="0dp"
+
+        android:layout_height="wrap_content"
+        android:max="100"
+        android:progress="0"
+        android:visibility="visible"
+        app:layout_constraintBottom_toTopOf="@+id/portFieldLayout"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/filePathView" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

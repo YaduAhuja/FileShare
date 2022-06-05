@@ -28,6 +28,7 @@ import android.os.Environment;
 import android.util.Log;
 import android.view.View.OnClickListener;
 import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.view.View;
@@ -36,6 +37,7 @@ import com.YAIndustries.fileshare.R;
 import com.YAIndustries.fileshare.models.FileMetaData;
 import com.YAIndustries.fileshare.services.MyBroadcastReceiver;
 import com.YAIndustries.fileshare.utilities.Utils;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.android.material.textfield.TextInputLayout;
 
@@ -49,6 +51,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -58,6 +61,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     private Button sendButton, receiveButton, testButton, searchButton;
     private WifiP2pManager manager;
     private Channel channel;
+    private ProgressBar fileProgressBar;
     private BroadcastReceiver receiver;
     private IntentFilter intentFilter;
     private AppCompatActivity thisActivity;
@@ -66,11 +70,26 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     private Uri filePath;
     private TextInputLayout portAddress, ipAddress;
     private String hostAddress = null;
+    private FileMetaData metaData;
+
     private final ActivityResultLauncher<String> filePicker = registerForActivityResult(
             new ActivityResultContracts.GetContent(),
             (Uri result) -> {
+                Log.d("Activity Result URI", result+"");
+                if(result == null)
+                    return;
                 filePath = result;
-                filePathView.setText(filePath.toString());
+                var queryResult = getContentResolver().query(result, null, null, null,null);
+                metaData = Utils.getFileMetaDataFromCursor(queryResult);
+                Log.d("MetaData", metaData.name + "  "+ metaData.size);
+                String json;
+                try {
+                     json = new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(metaData);
+                } catch (JsonProcessingException e) {
+                    Log.d("Json Writer", e.getMessage());
+                    json = "File Parsing Error";
+                }
+                filePathView.setText(json);
             }
     );
 
@@ -88,6 +107,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         testButton = findViewById(R.id.testStorage);
         searchButton = findViewById(R.id.search_button);
         ipAddress = findViewById(R.id.ipAddressInput);
+        fileProgressBar = findViewById(R.id.fileProgress);
 
         PeerListListener peerListListener = deviceList -> {
             Collection<WifiP2pDevice> currentPeers = deviceList.getDeviceList();
@@ -159,21 +179,21 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
              * If this code is reached, a client has connected and transferred data
              * Save the input stream from the client as a JPEG file
              */
-            File file = new File(Environment.getExternalStorageDirectory() + "/Download/"
-                    +"FileShare/" + System.currentTimeMillis()
-                    + ".jpg");
-            File directory = file.getParentFile();
-            if (directory == null || !directory.mkdirs()){
-                Log.d("Directory Check", "Directory not created");
-                runOnUiThread(() -> showToast(this, "File Cannot be Created"));
-            }
-
-            boolean fileCreated = file.createNewFile();
+            String basePath = Environment.getExternalStorageDirectory() + "/Download/FileShare/";
+            var file = new File(basePath);
+            file.mkdirs();
+            InputStream inputstream = client.getInputStream();
+            metaData = Utils.getFileMetaDataFromStream(inputstream);
+            if(metaData == null) throw new Exception("Error in Processing Metadata");
+            file = new File(basePath+"/"+ metaData.name);
+            var fileCreated = file.createNewFile();
             if(fileCreated)
                 runOnUiThread(() -> showToast(this, "File creation Successful"));
             Log.d("Directory Check", "File Created : "+ fileCreated);
-            InputStream inputstream = client.getInputStream();
-            Utils.copyFile(this, inputstream, new FileOutputStream(file));
+            var outputStream = new FileOutputStream(file);
+            Utils.copyFile(this, inputstream, outputStream, fileProgressBar, metaData.size);
+            inputstream.close();
+            outputStream.close();
             client.close();
             serverSocket.close();
         } catch (Exception e) {
@@ -190,8 +210,13 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
             socket.connect(new InetSocketAddress(hostAddress, port), 500);
             runOnUiThread(() -> showToast(this, "Connection Successful"));
             OutputStream outputStream = socket.getOutputStream();
+            String json = new ObjectMapper().writeValueAsString(metaData);
+            outputStream.write(json.getBytes());
+            outputStream.write(0);
             var inputStream = getContentResolver().openInputStream(filePath);
-            Utils.copyFile(this, inputStream, outputStream);
+            Utils.copyFile(this, inputStream, outputStream, fileProgressBar, metaData.size);
+            inputStream.close();
+            outputStream.close();
             runOnUiThread(()-> showToast(this,"Data Sent Successfully"));
         } catch (Exception e) {
             Log.d("Send Data to Server", e.getMessage());
@@ -276,7 +301,6 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                     runOnUiThread(()-> showToast(thisActivity, "P2P group creation failed. Retry.", Toast.LENGTH_SHORT));
                 }
             });
-            showToast(this, "Receive Button Clicked");
             if(!checkReadStoragePermission(this) || !checkWriteStoragePermission(this))
                 return;
             CompletableFuture.runAsync(this::createServer).thenRunAsync(this::cleanUp);
@@ -308,49 +332,42 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         }
 
         if(view == testButton) {
-            if(!checkWriteStoragePermission(this) || !checkReadStoragePermission(this)){
-                showToast(this, "Storage Permission not Granted", Toast.LENGTH_SHORT);
-                return;
-            }
-//            if(filePath == null) {
-//                filePicker.launch("*/*");
-//                return;
-//            }
-
-            try {
-                var f = new File(Environment.getExternalStorageDirectory().toString()+"/Download/Fileshare");
-                f.mkdir();
-                String tempFilePath = Environment.getExternalStorageDirectory().toString()+"/Download/FileShare/temp.bin";
-                f = new File(Environment.getExternalStorageDirectory().toString()+"/Download/OS Masternotes.pdf");
-                var metaData = new FileMetaData();
-                metaData.name = f.getName();
-                metaData.size = f.length();
-                var fis = new FileInputStream(f);
-                f = new File(tempFilePath);
-                f.createNewFile();
-                var payload = new ObjectMapper().writeValueAsString(metaData);
-                var testFos = new FileOutputStream(f);
-                int c ;
-                testFos.write(payload.getBytes());
-                testFos.write(0);
-                Utils.copyFile(this, fis, testFos);
-
-                StringBuilder sb = new StringBuilder();
-                fis = new FileInputStream(Environment.getExternalStorageDirectory().toString()+"/Download/FileShare/temp.bin");
-                while((c = fis.read()) != 0){
-                    sb.append((char)c);
+            CompletableFuture.runAsync(()-> {
+                if(!checkWriteStoragePermission(this) || !checkReadStoragePermission(this)){
+                    showToast(this, "Storage Permission not Granted", Toast.LENGTH_SHORT);
+                    return;
                 }
-                var recPayload = sb.toString();
-                metaData = new ObjectMapper().readValue(recPayload, FileMetaData.class);
-                var resolver = Environment.getExternalStorageDirectory().toString()+"/Download/Fileshare/"+ metaData.name;
-                f = new File(resolver);
-                f.getParentFile().mkdir();
-//                var inputStream = getContentResolver().openInputStream(filePath);
-                var fos = new FileOutputStream(f);
-                Utils.copyFile(this, fis, fos);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+                if(filePath == null) {
+                    filePicker.launch("*/*");
+                    return;
+                }
+
+                try {
+                    var f = new File(Environment.getExternalStorageDirectory().toString()+"/Download/Fileshare");
+                    f.mkdir();
+
+                    String tempFilePath = Environment.getExternalStorageDirectory().toString()+"/Download/FileShare/temp.bin";
+                    var fis = getContentResolver().openInputStream(filePath);
+                    f = new File(tempFilePath);
+                    f.createNewFile();
+                    var testFos = new FileOutputStream(f);
+                    testFos.write(new ObjectMapper().writeValueAsBytes(metaData));
+                    testFos.write(0);
+                    Utils.copyFile(this, fis, testFos, fileProgressBar, metaData.size);
+
+                    StringBuilder sb = new StringBuilder();
+                    fis = new FileInputStream(Environment.getExternalStorageDirectory().toString()+"/Download/FileShare/temp.bin");
+                    metaData = Utils.getFileMetaDataFromStream(fis);
+
+                    var resolver = Environment.getExternalStorageDirectory().toString()+"/Download/Fileshare/"+ metaData.name;
+                    f = new File(resolver);
+                    f.getParentFile().mkdir();
+                    var fos = new FileOutputStream(f);
+                    Utils.copyFile(this, fis, fos, fileProgressBar, metaData.size);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            });
         }
     }
 }
