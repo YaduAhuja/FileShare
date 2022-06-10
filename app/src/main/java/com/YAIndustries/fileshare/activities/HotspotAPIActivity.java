@@ -137,6 +137,7 @@ public class HotspotAPIActivity extends AppCompatActivity implements OnClickList
             Log.d(TAG, "Client Port Address : " + clientSocket.getPort());
             Log.d(TAG, "Client Inet Address : " + clientSocket.getInetAddress());
             Log.d(TAG, "Client Remote Socket Address : " + clientSocket.getRemoteSocketAddress());
+
             var inputStream = clientSocket.getInputStream();
             var metaData = Utils.getFileMetaDataFromStream(inputStream);
             if(metaData == null) {

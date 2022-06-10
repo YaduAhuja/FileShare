@@ -88,11 +88,11 @@ public class Utils {
     }
 
     public static boolean copyFile(AppCompatActivity activity, InputStream inputStream, OutputStream outputStream, ProgressBar progressBar, long fileSize) {
-        int c, len = 1<<22;
+        int len = 1<<22;
         long count = 0;
         byte[] buf = new byte[len];
         boolean errorOccured = false;
-        try{
+        try {
             while ((len = inputStream.read(buf)) != -1) {
                 outputStream.write(buf, 0, len);
                 count += len;
