@@ -4,25 +4,40 @@ import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Build;
+import android.os.Environment;
 import android.provider.OpenableColumns;
 import android.util.Log;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import com.YAIndustries.fileshare.models.FileMetaData;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.Inet4Address;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.Permission;
+import java.security.Permissions;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Utils {
+
+    private static String TAG = "Utils";
+
     public static void showToast(Context context, String message) {
         Toast.makeText(context, message, Toast.LENGTH_LONG).show();
     }
@@ -72,24 +87,26 @@ public class Utils {
         return true;
     }
 
-    public static void copyFile(AppCompatActivity activity, InputStream inputStream, OutputStream outputStream, ProgressBar progressBar, long fileSize) {
-        int c, len = 1<<21;
+    public static boolean copyFile(AppCompatActivity activity, InputStream inputStream, OutputStream outputStream, ProgressBar progressBar, long fileSize) {
+        int c, len = 1<<22;
         long count = 0;
         byte[] buf = new byte[len];
+        boolean errorOccured = false;
         try{
-            while ((len = inputStream.read(buf)) != -1){
+            while ((len = inputStream.read(buf)) != -1) {
                 outputStream.write(buf, 0, len);
                 count += len;
                 double progress = (count * 1.0) / fileSize * 100;
                 activity.runOnUiThread(() -> progressBar.setProgress((int)progress));
             }
-        }catch (IOException e){
+        } catch (IOException e){
             Log.d("Copy File", e.getMessage());
             activity.runOnUiThread(()-> showToast(activity, "Error in Copy"));
+            errorOccured = true;
         }
+
         Log.d("Copy File", "Bytes Written : "+ count);
-        final long countCopy = count;
-        activity.runOnUiThread(() -> showToast(activity, "Bytes Written : "+ countCopy));
+        return !errorOccured;
     }
 
     public static boolean checkVersionAboveQ() {
@@ -124,6 +141,13 @@ public class Utils {
         var ret = new FileMetaData();
         ret.name = cursor.getString(nameIndex);
         ret.size = cursor.getLong(sizeIndex);
+        String json = "";
+        try {
+            json = new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(ret);
+        } catch (JsonProcessingException e) {
+            Log.d(TAG, "getFileMetaDataFromCursor: Error in Flushing JSON");
+        }
+        Log.d(TAG, "getFileMetaDataFromCursor: Parsed JSON\n" + json);
         return ret;
     }
 
@@ -132,5 +156,62 @@ public class Utils {
         if(cursor.getCount() < 1)
             return null;
         return getFileMetaDataFromCursor(cursor, 1);
+    }
+
+    // New API
+
+    // Checks for read Storage and Write Storage Permissions
+    private static boolean checkPermissionGranted(AppCompatActivity activity, String permission) {
+        return activity.checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    public static boolean checkStoragePermissions(AppCompatActivity activity) {
+        if(checkVersionAboveQ())
+            return true;
+
+        return  checkPermissionGranted(activity, Manifest.permission.READ_EXTERNAL_STORAGE) &&
+                checkPermissionGranted(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+    }
+
+    public static void requestStoragePermissions(AppCompatActivity activity) {
+        List<String> permissions = new ArrayList<>(2);
+        if(!checkPermissionGranted(activity, Manifest.permission.READ_EXTERNAL_STORAGE))
+            permissions.add(Manifest.permission.READ_EXTERNAL_STORAGE);
+
+        if(!checkPermissionGranted(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE))
+            permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+
+        if(!permissions.isEmpty()) {
+            var permissionsArray = permissions.toArray(new String[0]);
+            activity.requestPermissions(permissionsArray, 12);
+        }
+    }
+
+    public static FileMetaData getFileMetaDataFromUri(@NonNull Context context, @NonNull Uri fileUri) {
+        var cursor = context.getContentResolver().query(fileUri, null, null, null, null);
+        return getFileMetaDataFromCursor(cursor);
+    }
+
+    public static boolean ensureDataDirectory(AppCompatActivity activity) {
+//        if (!checkStoragePermissions(activity)) {
+//            Log.d(TAG, "ensureDataDirectory: Error in Fetching the Permissions");
+//            return false;
+//        }
+        File f = new File(getDataDirectoryPath());
+        return f.isDirectory() || f.mkdirs();
+    }
+
+    public static String getDataDirectoryPath() {
+        return Environment.getExternalStorageDirectory()+ "/Download/FileShare/";
+    }
+
+    public static byte[] getByteArrayFromInt(int num) {
+        byte[] ret = {
+                        (byte)(num),
+                        (byte)(num>>8),
+                        (byte)(num>>16),
+                        (byte)(num>>24)
+        };
+        return ret;
     }
 }
