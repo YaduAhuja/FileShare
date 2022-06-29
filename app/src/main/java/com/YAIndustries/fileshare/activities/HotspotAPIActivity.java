@@ -1,54 +1,37 @@
 package com.YAIndustries.fileshare.activities;
 
 import android.net.Uri;
-import android.net.wifi.WifiManager;
+import android.net.nsd.NsdManager;
 import android.os.Bundle;
-import android.os.Environment;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityOptionsCompat;
 
 import com.YAIndustries.fileshare.R;
+import com.YAIndustries.fileshare.interfaces.NsdTaskInvoker;
 import com.YAIndustries.fileshare.models.FileMetaData;
+import com.YAIndustries.fileshare.utilities.ConnectionHelper;
+import com.YAIndustries.fileshare.utilities.NsdHelper;
 import com.YAIndustries.fileshare.utilities.Utils;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.android.material.textfield.TextInputLayout;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.Inet4Address;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.nio.ByteBuffer;
-import java.util.LinkedList;
-import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 
-public class HotspotAPIActivity extends AppCompatActivity implements OnClickListener {
-    private boolean receiving;
-    private ServerSocket serverSocket;
-    private Socket clientSocket;
+public class HotspotAPIActivity extends AppCompatActivity implements OnClickListener, NsdTaskInvoker {
     private final String TAG = "HotspotAPIActivity";
     private ProgressBar fileTransferProgressBar;
-    private TextInputLayout fileTransferPortInput;
     private TextView fileDetailsView;
     private Uri fileUri;
     private FileMetaData metaData;
-//    private Queue<Runnable> executionsPipeline;
-
+    private NsdHelper nsdHelper;
     private final ActivityResultLauncher<String> filePicker = registerForActivityResult(
             new ActivityResultContracts.GetContent(),
             (Uri result) -> {
@@ -59,9 +42,10 @@ public class HotspotAPIActivity extends AppCompatActivity implements OnClickList
                 metaData = Utils.getFileMetaDataFromUri(this, result);
                 if (metaData != null)
                     fileDetailsView.setText(metaData.name);
-                CompletableFuture.runAsync(this::connectToServer);
+                nsdHelper.discoverServices();
             }
     );
+    private ConnectionHelper connection;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,11 +55,14 @@ public class HotspotAPIActivity extends AppCompatActivity implements OnClickList
         // UI Objects
         Button sendButton = findViewById(R.id.sendButtonHotspot);
         Button receiveButton = findViewById(R.id.receiveButtonHotspot);
-        fileTransferPortInput = findViewById(R.id.fileTransferPortAddressInput);
         fileTransferProgressBar = findViewById(R.id.fileProgressBarHotspot);
         fileDetailsView = findViewById(R.id.fileDetailsView);
 //        executionsPipeline = new LinkedList<>();
 
+
+        // Helpers
+        connection = new ConnectionHelper();
+        nsdHelper = new NsdHelper(this, (NsdManager) getSystemService(NSD_SERVICE));
 
 
         //OnClickListeners Setting
@@ -84,38 +71,23 @@ public class HotspotAPIActivity extends AppCompatActivity implements OnClickList
 
 
         //Permissions Request
-        if(Utils.checkStoragePermissions(this))
+        if (Utils.checkStoragePermissions(this))
             Utils.requestStoragePermissions(this);
     }
 
     @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        try {
-            if(clientSocket != null)
-                clientSocket.close();
-            if(clientSocket != null && receiving)
-                serverSocket.close();
-        } catch (IOException e) {
-            Log.d(TAG, e.getMessage() + " While Closing connections");
-        }
-    }
-
-
-    @Override
     public void onClick(View v) {
-        if(!Utils.checkStoragePermissions(this)) {
+        if (!Utils.checkStoragePermissions(this)) {
             Utils.showToast(this, "Storage Permissions Not Granted Unable to Read/ Write Files");
             return;
         }
 
-        if(v.getId() == R.id.sendButtonHotspot) {
+        if (v.getId() == R.id.sendButtonHotspot) {
             filePicker.launch("*/*");
-
+            //Check FilePicker Result for Connections
         }
 
-        if(v.getId() == R.id.receiveButtonHotspot) {
-            receiving = true;
+        if (v.getId() == R.id.receiveButtonHotspot) {
             CompletableFuture.runAsync(this::createServer);
         }
     }
@@ -123,77 +95,60 @@ public class HotspotAPIActivity extends AppCompatActivity implements OnClickList
 
     private void createServer() {
         try {
-            serverSocket = new ServerSocket(0);
-            int portAddress = serverSocket.getLocalPort();
+            int portAddress = connection.createServer();
+            nsdHelper.registerService(portAddress);
+            connection.listenForConnection();
+            connection.readDataFromSocket(this, fileTransferProgressBar);
 
-            runOnUiThread(() -> fileTransferPortInput.getEditText().setText(Integer.toString(portAddress)));
-
-            Log.d(TAG, "Server Port Address : " + portAddress);
-            Log.d(TAG, "Server Inet Address : " + serverSocket.getInetAddress());
-            Log.d(TAG, "Server Local Socket Address : " + serverSocket.getLocalSocketAddress());
-
-            clientSocket = serverSocket.accept();
-
-            Log.d(TAG, "Client Port Address : " + clientSocket.getPort());
-            Log.d(TAG, "Client Inet Address : " + clientSocket.getInetAddress());
-            Log.d(TAG, "Client Remote Socket Address : " + clientSocket.getRemoteSocketAddress());
-
-            var inputStream = clientSocket.getInputStream();
-            var metaData = Utils.getFileMetaDataFromStream(inputStream);
-            if(metaData == null) {
-
-            }
-            File f = new File(Utils.getDataDirectoryPath() + metaData.name);
-            var outputStream = new FileOutputStream(f);
-            Utils.copyFile(HotspotAPIActivity.this, inputStream, outputStream, fileTransferProgressBar, metaData.size);
-            cleanup();
             runOnUiThread(() -> Utils.showToast(HotspotAPIActivity.this, "File Received Successfully"));
-
         } catch (Exception e) {
-            Log.d(TAG, "Exception in Create Server "+ e.getMessage());
+            Log.d(TAG, "Exception in Create Server " + e.getMessage());
         }
     }
 
-    private void connectToServer() {
-        WifiManager manager = (WifiManager) getSystemService(WIFI_SERVICE);
-        var info = manager.getConnectionInfo();
-        var dhcpInfo = manager.getDhcpInfo();
-
-        runOnUiThread(() -> Utils.showToast(HotspotAPIActivity.this,
-                "Using Connection " + info.getSSID() + " and Frequency "+ info.getFrequency()));
-        Log.d(TAG, "connectToServer: " + info.toString());
-        Log.d(TAG, "connectToServer: " + dhcpInfo.toString());
-
+    public void connectToServer(InetAddress address, int port) {
         try {
-            clientSocket = new Socket();
-            clientSocket.bind(null);
-            InetAddress address = InetAddress.getByAddress(Utils.getByteArrayFromInt(dhcpInfo.serverAddress));
-            Log.d(TAG, "connectToServer: " + address);
-            clientSocket.connect(new InetSocketAddress(address.getHostName(), Integer.parseInt(fileTransferPortInput.getEditText().getText().toString())), 500);
-            runOnUiThread(() -> Utils.showToast(this, "Connection Successful", Toast.LENGTH_SHORT));
-            var json = new ObjectMapper().writeValueAsString(metaData);
-            var outputStream = clientSocket.getOutputStream();
-            outputStream.write(json.getBytes());
-            outputStream.write(0);
-            var inputStream = getContentResolver().openInputStream(fileUri);
-            var res = Utils.copyFile(HotspotAPIActivity.this, inputStream, outputStream, fileTransferProgressBar, metaData.size);
-            cleanup();
-            var resMessage = res ? "File Sent Successfully": "Error in Sending File";
-            runOnUiThread(() -> Utils.showToast(HotspotAPIActivity.this, resMessage));
+            connection.createClientSocket();
+            connection.connectToServerSocket(address, port);
+            connection.pushDataToSocket(this, fileTransferProgressBar, fileUri);
+
+            runOnUiThread(() -> Utils.showToast(HotspotAPIActivity.this, "File Transfer Successful"));
         } catch (IOException e) {
             Log.d(TAG, "connectToServer: " + e.getMessage());
+            runOnUiThread(() -> Utils.showToast(HotspotAPIActivity.this, "File Transfer Failed"));
         }
     }
 
-    private void cleanup() {
+    @Override
+    public void onNsdTaskSuccessful(InetAddress address, int port) {
+        connectToServer(address, port);
+    }
+
+    @Override
+    public void onNsdTaskFailed() {
+
+    }
+
+    @Override
+    protected void onDestroy() {
         try {
-            if (clientSocket != null && clientSocket.isConnected())
-                clientSocket.close();
-            if (serverSocket != null && !serverSocket.isClosed())
-                serverSocket.close();
-            Log.d(TAG, "Cleanup: Successful");
+            connection.cleanup();
         } catch (IOException e) {
-            Log.d(TAG, "Cleanup: " + e.getMessage());
+            Log.d(TAG, "Error While Cleaning Up Sockets");
         }
+        super.onDestroy();
+    }
+
+    @Override
+    protected void onPause() {
+        nsdHelper.suspend();
+        super.onPause();
+    }
+
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        nsdHelper.resume();
     }
 }

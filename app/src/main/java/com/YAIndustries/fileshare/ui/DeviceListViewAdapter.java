@@ -9,14 +9,14 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.YAIndustries.fileshare.R;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class DeviceListViewAdapter extends RecyclerView.Adapter<DeviceListViewAdapter.ViewHolder> {
-    private Context context;
-    private List<WifiP2pDevice> devices;
+    private final Context context;
+    private final List<WifiP2pDevice> devices;
 
     public DeviceListViewAdapter(Context context, List<WifiP2pDevice> devices) {
         this.context = context;
@@ -48,7 +48,7 @@ public class DeviceListViewAdapter extends RecyclerView.Adapter<DeviceListViewAd
         public ViewHolder(@NonNull View view) {
             super(view);
             // Define click listener for the ViewHolder's View
-            textView = (TextView) view.findViewById(R.id.device_list_row_tv);
+            textView = view.findViewById(R.id.device_list_row_tv);
         }
 
         public TextView getTextView() {

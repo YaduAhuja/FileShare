@@ -12,7 +12,6 @@ import android.util.Log;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
-import androidx.activity.result.ActivityResultLauncher;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -26,21 +25,17 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.Inet4Address;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.security.Permission;
-import java.security.Permissions;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Utils {
 
-    private static String TAG = "Utils";
+    private static final String TAG = "Utils";
 
     public static void showToast(Context context, String message) {
         Toast.makeText(context, message, Toast.LENGTH_LONG).show();
     }
+
     public static void showToast(Context context, String message, int duration) {
         Toast.makeText(context, message, duration).show();
     }
@@ -60,9 +55,9 @@ public class Utils {
     }
 
     public static boolean checkWriteStoragePermission(AppCompatActivity activity) {
-        if(checkVersionAboveQ())
+        if (checkVersionAboveQ())
             return true;
-        if(ActivityCompat.checkSelfPermission(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 12);
             if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
                 showToast(activity, "Permission Not Granted");
@@ -75,7 +70,7 @@ public class Utils {
     }
 
     public static boolean checkReadStoragePermission(AppCompatActivity activity) {
-        if(ActivityCompat.checkSelfPermission(activity, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 12);
             if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
                 showToast(activity, "Permission Not Granted");
@@ -88,7 +83,7 @@ public class Utils {
     }
 
     public static boolean copyFile(AppCompatActivity activity, InputStream inputStream, OutputStream outputStream, ProgressBar progressBar, long fileSize) {
-        int len = 1<<22;
+        int len = 1 << 20;
         long count = 0;
         byte[] buf = new byte[len];
         boolean errorOccured = false;
@@ -97,15 +92,15 @@ public class Utils {
                 outputStream.write(buf, 0, len);
                 count += len;
                 double progress = (count * 1.0) / fileSize * 100;
-                activity.runOnUiThread(() -> progressBar.setProgress((int)progress));
+                activity.runOnUiThread(() -> progressBar.setProgress((int) progress));
             }
-        } catch (IOException e){
+        } catch (IOException e) {
             Log.d("Copy File", e.getMessage());
-            activity.runOnUiThread(()-> showToast(activity, "Error in Copy"));
+            activity.runOnUiThread(() -> showToast(activity, "Error in Copy"));
             errorOccured = true;
         }
 
-        Log.d("Copy File", "Bytes Written : "+ count);
+        Log.d("Copy File", "Bytes Written : " + count);
         return !errorOccured;
     }
 
@@ -130,10 +125,10 @@ public class Utils {
     }
 
     @Nullable
-    public static FileMetaData getFileMetaDataFromCursor(@NonNull  Cursor cursor, @NonNull  int row) {
+    public static FileMetaData getFileMetaDataFromCursor(@NonNull Cursor cursor, @NonNull int row) {
         // Query Result has Columns ["document_id", "mime_type", "_display_name", "last_modified", "flags", "_size"]
         // And the Result starts before first row
-        if(cursor.getCount() < row)
+        if (cursor.getCount() < row)
             return null;
         cursor.moveToPosition(row - 1);
         int nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
@@ -152,8 +147,8 @@ public class Utils {
     }
 
     @Nullable
-    public static FileMetaData getFileMetaDataFromCursor(@NonNull  Cursor cursor) {
-        if(cursor.getCount() < 1)
+    public static FileMetaData getFileMetaDataFromCursor(@NonNull Cursor cursor) {
+        if (cursor.getCount() < 1)
             return null;
         return getFileMetaDataFromCursor(cursor, 1);
     }
@@ -166,22 +161,22 @@ public class Utils {
     }
 
     public static boolean checkStoragePermissions(AppCompatActivity activity) {
-        if(checkVersionAboveQ())
+        if (checkVersionAboveQ())
             return true;
 
-        return  checkPermissionGranted(activity, Manifest.permission.READ_EXTERNAL_STORAGE) &&
+        return checkPermissionGranted(activity, Manifest.permission.READ_EXTERNAL_STORAGE) &&
                 checkPermissionGranted(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE);
     }
 
     public static void requestStoragePermissions(AppCompatActivity activity) {
         List<String> permissions = new ArrayList<>(2);
-        if(!checkPermissionGranted(activity, Manifest.permission.READ_EXTERNAL_STORAGE))
+        if (!checkPermissionGranted(activity, Manifest.permission.READ_EXTERNAL_STORAGE))
             permissions.add(Manifest.permission.READ_EXTERNAL_STORAGE);
 
-        if(!checkPermissionGranted(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE))
+        if (!checkPermissionGranted(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE))
             permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
 
-        if(!permissions.isEmpty()) {
+        if (!permissions.isEmpty()) {
             var permissionsArray = permissions.toArray(new String[0]);
             activity.requestPermissions(permissionsArray, 12);
         }
@@ -202,16 +197,21 @@ public class Utils {
     }
 
     public static String getDataDirectoryPath() {
-        return Environment.getExternalStorageDirectory()+ "/Download/FileShare/";
+        return Environment.getExternalStorageDirectory() + "/Download/FileShare/";
     }
 
     public static byte[] getByteArrayFromInt(int num) {
-        byte[] ret = {
-                        (byte)(num),
-                        (byte)(num>>8),
-                        (byte)(num>>16),
-                        (byte)(num>>24)
+        return new byte[]{
+                (byte) (num),
+                (byte) (num >> 8),
+                (byte) (num >> 16),
+                (byte) (num >> 24)
         };
-        return ret;
+    }
+
+    public static String getDeviceName() {
+        String manufacturer = Build.MANUFACTURER;
+        String model = Build.MODEL;
+        return manufacturer + "-" + model;
     }
 }

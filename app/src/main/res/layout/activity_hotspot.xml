@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="20dp">
@@ -25,26 +23,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/sendButtonHotspot"
-        app:layout_constraintBottom_toTopOf="@id/fileTransferPortAddressInput"/>
-
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/fileTransferPortAddressInput"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintBottom_toTopOf="@+id/fileDetailsView"
-        app:layout_constraintTop_toBottomOf="@+id/receiveButtonHotspot"
-        >
-
-        <com.google.android.material.textfield.TextInputEditText
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Passcode"
-            android:inputType="numberSigned"
-            android:digits="1234567890"
-            android:maxLength="6" />
-    </com.google.android.material.textfield.TextInputLayout>
+        app:layout_constraintBottom_toTopOf="@id/fileDetailsView" />
 
     <TextView
         android:id="@+id/fileDetailsView"
@@ -54,7 +33,7 @@
         app:layout_constraintBottom_toTopOf="@+id/fileProgressBarHotspot"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/fileTransferPortAddressInput" />
+        app:layout_constraintTop_toBottomOf="@id/receiveButtonHotspot" />
 
     <ProgressBar
         android:id="@+id/fileProgressBarHotspot"

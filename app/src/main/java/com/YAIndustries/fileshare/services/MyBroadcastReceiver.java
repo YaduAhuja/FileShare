@@ -3,34 +3,28 @@ package com.YAIndustries.fileshare.services;
 import static com.YAIndustries.fileshare.utilities.Utils.checkLocationPermission;
 import static com.YAIndustries.fileshare.utilities.Utils.showToast;
 
-import android.Manifest;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.net.NetworkInfo;
-import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pGroup;
-import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
-import android.net.wifi.p2p.WifiP2pManager.PeerListListener;
 import android.net.wifi.p2p.WifiP2pManager.Channel;
 import android.net.wifi.p2p.WifiP2pManager.ConnectionInfoListener;
-import android.os.Build;
+import android.net.wifi.p2p.WifiP2pManager.PeerListListener;
 import android.util.Log;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
 
 import com.YAIndustries.fileshare.utilities.Utils;
 
 public class MyBroadcastReceiver extends BroadcastReceiver {
-    private WifiP2pManager manager;
-    private Channel channel;
-    private AppCompatActivity activity;
-    private PeerListListener peerListListener;
-    private ConnectionInfoListener connectionInfoListener;
+    private final WifiP2pManager manager;
+    private final Channel channel;
+    private final AppCompatActivity activity;
+    private final PeerListListener peerListListener;
+    private final ConnectionInfoListener connectionInfoListener;
 
     public MyBroadcastReceiver(WifiP2pManager manager, Channel channel, AppCompatActivity activity, PeerListListener peerListListener, ConnectionInfoListener connectionInfoListener) {
         super();
@@ -50,11 +44,11 @@ public class MyBroadcastReceiver extends BroadcastReceiver {
             showToast(activity, action);
             Utils.checkLocationPermission(activity);
             manager.requestGroupInfo(channel, (WifiP2pGroup group) -> {
-                Log.d("Group Info", "Group "+ group);
+                Log.d("Group Info", "Group " + group);
             });
         } else if (WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION.equals(action)) {
             // Call WifiP2pManager.requestPeers() to get a list of current peers
-            if(!checkLocationPermission(activity))
+            if (!checkLocationPermission(activity))
                 return;
             Log.d("Wifip2p Manager Reference", manager.toString());
             if (manager != null)

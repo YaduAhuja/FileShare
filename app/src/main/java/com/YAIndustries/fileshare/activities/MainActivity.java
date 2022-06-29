@@ -5,46 +5,35 @@ import static com.YAIndustries.fileshare.utilities.Utils.checkReadStoragePermiss
 import static com.YAIndustries.fileshare.utilities.Utils.checkWriteStoragePermission;
 import static com.YAIndustries.fileshare.utilities.Utils.showToast;
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
-import android.Manifest;
-import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.PackageManager;
-import android.net.ConnectivityManager;
 import android.net.Uri;
-import android.net.wifi.WifiManager;
 import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pGroup;
 import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
-import android.net.wifi.p2p.WifiP2pManager.Channel;
-import android.net.wifi.p2p.WifiP2pManager.PeerListListener;
 import android.net.wifi.p2p.WifiP2pManager.ActionListener;
+import android.net.wifi.p2p.WifiP2pManager.Channel;
 import android.net.wifi.p2p.WifiP2pManager.ConnectionInfoListener;
-
+import android.net.wifi.p2p.WifiP2pManager.PeerListListener;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.Handler;
-import android.os.Parcelable;
-import android.provider.Settings;
 import android.util.Log;
+import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.view.View;
+
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.YAIndustries.fileshare.R;
 import com.YAIndustries.fileshare.models.FileMetaData;
@@ -55,33 +44,30 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.android.material.textfield.TextInputLayout;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.reflect.Method;
-import java.net.Inet4Address;
-import java.net.Inet6Address;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 
 public class MainActivity extends AppCompatActivity implements OnClickListener {
+    private final List<WifiP2pDevice> availableDeviceList = new ArrayList<>();
+    private final ArrayList<String> tempModel = new ArrayList<>();
+    private final ActivityResultLauncher<String[]> permissionsRequestor = registerForActivityResult(
+            new ActivityResultContracts.RequestMultiplePermissions(),
+            (Map<String, Boolean> result) -> {
+
+            }
+    );
     private Button sendButton, receiveButton, testButton, searchButton;
     private WifiP2pManager manager;
     private Channel channel;
@@ -90,14 +76,10 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     private IntentFilter intentFilter;
     private AppCompatActivity thisActivity;
     private TextView filePathView;
-    private final List<WifiP2pDevice> availableDeviceList = new ArrayList<>();
     private Uri filePath;
     private TextInputLayout portAddress, ipAddress;
     private String hostAddress = null;
     private FileMetaData metaData;
-    private ArrayList<String> tempModel = new ArrayList<>();
-    private RecyclerView deviceListView;
-
     private final ActivityResultLauncher<String> filePicker = registerForActivityResult(
             new ActivityResultContracts.GetContent(),
             (Uri result) -> {
@@ -118,13 +100,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                 filePathView.setText(json);
             }
     );
-
-    private final ActivityResultLauncher<String[]> permissionsRequestor = registerForActivityResult(
-            new ActivityResultContracts.RequestMultiplePermissions(),
-            (Map<String, Boolean> result) -> {
-
-            }
-    );
+    private RecyclerView deviceListView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -387,7 +363,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                     runOnUiThread(() -> showToast(thisActivity, "P2P group creation Success", Toast.LENGTH_SHORT));
                     Utils.checkLocationPermission(thisActivity);
                     manager.requestGroupInfo(channel, (WifiP2pGroup group) -> {
-                        Log.d("Group Info", "Group "+ group);
+                        Log.d("Group Info", "Group " + group);
                         if (group != null) {
                             Log.d("Group Info", "Passphrase " + group.getPassphrase());
                             if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P)
@@ -398,7 +374,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
 
                 @Override
                 public void onFailure(int i) {
-                    runOnUiThread(()-> showToast(thisActivity, "P2P group creation failed. Retry. by "+ i, Toast.LENGTH_SHORT));
+                    runOnUiThread(() -> showToast(thisActivity, "P2P group creation failed. Retry. by " + i, Toast.LENGTH_SHORT));
                 }
             });
 
@@ -422,13 +398,13 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
 //            }
 
 
-            if(!checkReadStoragePermission(this) || !checkWriteStoragePermission(this))
+            if (!checkReadStoragePermission(this) || !checkWriteStoragePermission(this))
                 return;
             CompletableFuture.runAsync(this::createServer).thenRunAsync(this::cleanUp);
         }
 
-        if(view == deviceListView) {
-            if(availableDeviceList.isEmpty())
+        if (view == deviceListView) {
+            if (availableDeviceList.isEmpty())
                 return;
 
             var connectionDevice = availableDeviceList.get(0);
@@ -451,7 +427,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
             });
         }
 
-        if(view == testButton) {
+        if (view == testButton) {
             var temp = new WifiP2pDevice();
             availableDeviceList.add(temp);
             deviceListView.getAdapter().notifyDataSetChanged();
