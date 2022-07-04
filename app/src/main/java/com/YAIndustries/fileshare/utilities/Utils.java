@@ -83,7 +83,8 @@ public class Utils {
     }
 
     public static boolean copyFile(AppCompatActivity activity, InputStream inputStream, OutputStream outputStream, ProgressBar progressBar, long fileSize) {
-        int len = 1 << 20;
+        // 1KB Buffer Size
+        int len = 1 << 10;
         long count = 0;
         byte[] buf = new byte[len];
         boolean errorOccured = false;
