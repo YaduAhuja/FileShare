@@ -167,12 +167,10 @@ public class SendFragment extends Fragment {
                     Log.d(TAG, "Discover Peers Request Failed");
                 }
             });
-        } catch (PermissionNotFoundException e) {
-            e.printStackTrace();
-        }
-        try {
+
             connectionHelper.createClientSocket();
-        } catch (IOException e) {
+        } catch (PermissionNotFoundException | IOException e) {
+            Log.d(TAG, "startNetworkStack: Unable to Start Network Stack");
             e.printStackTrace();
         }
     }

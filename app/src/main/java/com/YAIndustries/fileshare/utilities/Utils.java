@@ -28,8 +28,6 @@ import java.io.OutputStream;
 
 public class Utils {
     private static final String TAG = "Utils";
-    private static ObjectWriter jsonWriter;
-    private static ObjectMapper objectMapper;
 
     public static void showToast(Context context, String message) {
         Toast.makeText(context, message, Toast.LENGTH_LONG).show();
@@ -39,54 +37,12 @@ public class Utils {
         Toast.makeText(context, message, duration).show();
     }
 
-    public static boolean copyFile(AppCompatActivity activity, InputStream inputStream, OutputStream outputStream, ProgressBar progressBar, long fileSize) {
-        // 8KB Buffer Size
-        int len = 1 << 13;
-        long count = 0;
-        byte[] buf = new byte[len];
-        boolean errorOccurred = false;
-        try {
-            while (count < fileSize) {
-                len = (int) Math.min(fileSize - count, buf.length);
-                inputStream.read(buf, 0, len);
-                outputStream.write(buf, 0, len);
-                count += len;
-                double progress = (count * 1.0) / fileSize * 100;
-                Log.d("Copy File", "Bytes Written : " + count);
-                activity.runOnUiThread(() -> progressBar.setProgress((int) progress));
-            }
-            Log.d(TAG, "Done Copy " + count);
-        } catch (IOException e) {
-            Log.d("Copy File", e.getMessage());
-            activity.runOnUiThread(() -> showToast(activity, "Error in Copy"));
-            errorOccurred = true;
-        }
-
-        return !errorOccurred;
-    }
-
     public static boolean checkVersionAboveQ() {
         return Build.VERSION_CODES.Q < Build.VERSION.SDK_INT;
     }
 
     public static boolean checkVersionAboveP() {
         return Build.VERSION_CODES.P < Build.VERSION.SDK_INT;
-    }
-
-    @Nullable
-    public static FileMetaData getFileMetaDataFromStream(@NonNull InputStream inputStream) {
-        int c;
-        var jsonBuilder = new StringBuilder();
-        try {
-            while ((c = inputStream.read()) != 0)
-                jsonBuilder.append((char) c);
-            if (objectMapper == null)
-                objectMapper = new ObjectMapper();
-            return objectMapper.readValue(jsonBuilder.toString(), FileMetaData.class);
-        } catch (Exception e) {
-            Log.d("Parsing File Metadata From Stream", e.getMessage());
-        }
-        return null;
     }
 
     @Nullable
@@ -138,17 +94,5 @@ public class Utils {
 
     public static boolean isLocationPermissionAvailable(Context context) {
         return ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
-    }
-
-    public static String serializeFileMetaData(FileMetaData metaData) {
-        if (jsonWriter == null)
-            jsonWriter = new ObjectMapper().writerWithDefaultPrettyPrinter();
-        String json;
-        try {
-            json = jsonWriter.writeValueAsString(metaData);
-        } catch (JsonProcessingException e) {
-            json = "";
-        }
-        return json;
     }
 }

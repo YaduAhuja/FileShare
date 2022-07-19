@@ -54,7 +54,6 @@ public class TransferFragment extends Fragment {
             CompletableFuture.runAsync(this::startSending);
         else
             CompletableFuture.runAsync(this::startReceiving);
-//        CompletableFuture.runAsync(this::checkStorage);
     }
 
 
@@ -81,24 +80,6 @@ public class TransferFragment extends Fragment {
             connectionHelper.readDataFromSocket(activity, fileTransferProgressBar, fileDetailsTextView);
         } catch (IOException e) {
             activity.runOnUiThread(() -> Utils.showToast(getContext(), "Error in Receiving File "));
-        }
-    }
-
-    private void checkStorage() {
-        for (var metaData : activity.sendFilesQueue.keySet()) {
-            try {
-                var inputStream = activity.getContentResolver().openInputStream(activity.sendFilesQueue.get(metaData));
-                File f = new File(Utils.getDataDirectoryPath() + metaData.name);
-                f.getParentFile().mkdirs();
-                f.createNewFile();
-                var outputStream = new FileOutputStream(f);
-                Utils.copyFile(activity, inputStream, outputStream, fileTransferProgressBar, metaData.size);
-                outputStream.close();
-                inputStream.close();
-            } catch (IOException e) {
-                Log.d("Check Storage", "" + e);
-                getActivity().runOnUiThread(() -> Utils.showToast(getActivity(), e + ""));
-            }
         }
     }
 }
