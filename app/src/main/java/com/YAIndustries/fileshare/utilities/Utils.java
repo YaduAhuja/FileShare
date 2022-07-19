@@ -1,4 +1,4 @@
-package com.YAIndustries.fileshare.utilities;
+package com.yaindustries.fileshare.utilities;
 
 import android.Manifest;
 import android.content.Context;
@@ -17,20 +17,19 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
-import com.YAIndustries.fileshare.models.FileMetaData;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.yaindustries.fileshare.models.FileMetaData;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.List;
 
 public class Utils {
-
     private static final String TAG = "Utils";
+    private static ObjectWriter jsonWriter;
+    private static ObjectMapper objectMapper;
 
     public static void showToast(Context context, String message) {
         Toast.makeText(context, message, Toast.LENGTH_LONG).show();
@@ -40,73 +39,38 @@ public class Utils {
         Toast.makeText(context, message, duration).show();
     }
 
-    public static boolean checkLocationPermission(AppCompatActivity activity) {
-        if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 12);
-
-            if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                showToast(activity, "Permission Not Granted");
-                Log.d("Permission Request", "Not Granted");
-                return false;
-            }
-        } else
-            Log.d("Permission Request", "Granted");
-        return true;
-    }
-
-    public static boolean checkWriteStoragePermission(AppCompatActivity activity) {
-        if (checkVersionAboveQ())
-            return true;
-        if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 12);
-            if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                showToast(activity, "Permission Not Granted");
-                Log.d("Permission Request", "Not Granted");
-                return false;
-            }
-        } else
-            Log.d("Permission Request", "Granted");
-        return true;
-    }
-
-    public static boolean checkReadStoragePermission(AppCompatActivity activity) {
-        if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 12);
-            if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                showToast(activity, "Permission Not Granted");
-                Log.d("Permission Request", "Not Granted");
-                return false;
-            }
-        } else
-            Log.d("Permission Request", "Granted");
-        return true;
-    }
-
     public static boolean copyFile(AppCompatActivity activity, InputStream inputStream, OutputStream outputStream, ProgressBar progressBar, long fileSize) {
-        // 1KB Buffer Size
-        int len = 1 << 10;
+        // 8KB Buffer Size
+        int len = 1 << 13;
         long count = 0;
         byte[] buf = new byte[len];
-        boolean errorOccured = false;
+        boolean errorOccurred = false;
         try {
-            while ((len = inputStream.read(buf)) != -1) {
+            while (count < fileSize) {
+                len = (int) Math.min(fileSize - count, buf.length);
+                inputStream.read(buf, 0, len);
                 outputStream.write(buf, 0, len);
                 count += len;
                 double progress = (count * 1.0) / fileSize * 100;
+                Log.d("Copy File", "Bytes Written : " + count);
                 activity.runOnUiThread(() -> progressBar.setProgress((int) progress));
             }
+            Log.d(TAG, "Done Copy " + count);
         } catch (IOException e) {
             Log.d("Copy File", e.getMessage());
             activity.runOnUiThread(() -> showToast(activity, "Error in Copy"));
-            errorOccured = true;
+            errorOccurred = true;
         }
 
-        Log.d("Copy File", "Bytes Written : " + count);
-        return !errorOccured;
+        return !errorOccurred;
     }
 
     public static boolean checkVersionAboveQ() {
         return Build.VERSION_CODES.Q < Build.VERSION.SDK_INT;
+    }
+
+    public static boolean checkVersionAboveP() {
+        return Build.VERSION_CODES.P < Build.VERSION.SDK_INT;
     }
 
     @Nullable
@@ -116,9 +80,9 @@ public class Utils {
         try {
             while ((c = inputStream.read()) != 0)
                 jsonBuilder.append((char) c);
-
-            var metaData = new ObjectMapper().readValue(jsonBuilder.toString(), FileMetaData.class);
-            return metaData;
+            if (objectMapper == null)
+                objectMapper = new ObjectMapper();
+            return objectMapper.readValue(jsonBuilder.toString(), FileMetaData.class);
         } catch (Exception e) {
             Log.d("Parsing File Metadata From Stream", e.getMessage());
         }
@@ -137,13 +101,7 @@ public class Utils {
         var ret = new FileMetaData();
         ret.name = cursor.getString(nameIndex);
         ret.size = cursor.getLong(sizeIndex);
-        String json = "";
-        try {
-            json = new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(ret);
-        } catch (JsonProcessingException e) {
-            Log.d(TAG, "getFileMetaDataFromCursor: Error in Flushing JSON");
-        }
-        Log.d(TAG, "getFileMetaDataFromCursor: Parsed JSON\n" + json);
+        Log.d(TAG, "getFileMetaDataFromCursor: {\nname: " + ret.name + " \nsize: " + ret.size + "\n}");
         return ret;
     }
 
@@ -154,47 +112,9 @@ public class Utils {
         return getFileMetaDataFromCursor(cursor, 1);
     }
 
-    // New API
-
-    // Checks for read Storage and Write Storage Permissions
-    private static boolean checkPermissionGranted(AppCompatActivity activity, String permission) {
-        return activity.checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED;
-    }
-
-    public static boolean checkStoragePermissions(AppCompatActivity activity) {
-        if (checkVersionAboveQ())
-            return true;
-
-        return checkPermissionGranted(activity, Manifest.permission.READ_EXTERNAL_STORAGE) &&
-                checkPermissionGranted(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE);
-    }
-
-    public static void requestStoragePermissions(AppCompatActivity activity) {
-        List<String> permissions = new ArrayList<>(2);
-        if (!checkPermissionGranted(activity, Manifest.permission.READ_EXTERNAL_STORAGE))
-            permissions.add(Manifest.permission.READ_EXTERNAL_STORAGE);
-
-        if (!checkPermissionGranted(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE))
-            permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
-
-        if (!permissions.isEmpty()) {
-            var permissionsArray = permissions.toArray(new String[0]);
-            activity.requestPermissions(permissionsArray, 12);
-        }
-    }
-
     public static FileMetaData getFileMetaDataFromUri(@NonNull Context context, @NonNull Uri fileUri) {
         var cursor = context.getContentResolver().query(fileUri, null, null, null, null);
         return getFileMetaDataFromCursor(cursor);
-    }
-
-    public static boolean ensureDataDirectory(AppCompatActivity activity) {
-//        if (!checkStoragePermissions(activity)) {
-//            Log.d(TAG, "ensureDataDirectory: Error in Fetching the Permissions");
-//            return false;
-//        }
-        File f = new File(getDataDirectoryPath());
-        return f.isDirectory() || f.mkdirs();
     }
 
     public static String getDataDirectoryPath() {
@@ -214,5 +134,21 @@ public class Utils {
         String manufacturer = Build.MANUFACTURER;
         String model = Build.MODEL;
         return manufacturer + "-" + model;
+    }
+
+    public static boolean isLocationPermissionAvailable(Context context) {
+        return ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    public static String serializeFileMetaData(FileMetaData metaData) {
+        if (jsonWriter == null)
+            jsonWriter = new ObjectMapper().writerWithDefaultPrettyPrinter();
+        String json;
+        try {
+            json = jsonWriter.writeValueAsString(metaData);
+        } catch (JsonProcessingException e) {
+            json = "";
+        }
+        return json;
     }
 }

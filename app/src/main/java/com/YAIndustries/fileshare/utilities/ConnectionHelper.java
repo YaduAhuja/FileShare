@@ -1,12 +1,15 @@
-package com.YAIndustries.fileshare.utilities;
+package com.yaindustries.fileshare.utilities;
 
 import android.net.Uri;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yaindustries.fileshare.exceptions.NoPortAvailableException;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -16,17 +19,30 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 public class ConnectionHelper {
+    private static final int START_PORT = 65535;
+    private static final int END_PORT = 65434;
     private ServerSocket serverSocket;
     private Socket socket;
+    private DataInputStream socketInput;
+    private DataOutputStream socketOutput;
 
     /**
      * Creates A Server Socket
      *
      * @return Port Address for the Server Socket
-     * @throws IOException
+     * @throws NoPortAvailableException when no port is available
      */
-    public int createServer() throws IOException {
-        serverSocket = new ServerSocket(0);
+    public int createServer() throws NoPortAvailableException {
+        boolean serverCreated = false;
+        for (int i = START_PORT; i > END_PORT && !serverCreated; i--) {
+            try {
+                serverSocket = new ServerSocket(i);
+                serverCreated = true;
+            } catch (IOException ignored) {
+            }
+        }
+        if (serverSocket == null)
+            throw new NoPortAvailableException();
         return serverSocket.getLocalPort();
     }
 
@@ -44,12 +60,23 @@ public class ConnectionHelper {
      * Connects to a Server Socket
      *
      * @param address InetAddress of the Server
-     * @param port    Port for the Connection
      * @throws IOException
      */
-    public void connectToServerSocket(InetAddress address, int port) throws IOException {
-        var server = new InetSocketAddress(address.getHostName(), port);
-        socket.connect(server, 500);
+    public void connectToServerSocket(InetAddress address) throws NoPortAvailableException {
+        boolean connectedToServer = false;
+
+        for (int i = START_PORT; i > END_PORT && !connectedToServer; i--) {
+            try {
+                var server = new InetSocketAddress(address.getHostName(), i);
+                socket.connect(server, 100);
+                connectedToServer = true;
+                initializeSocket();
+            } catch (IOException ignored) {
+            }
+        }
+
+        if (!socket.isConnected())
+            throw new NoPortAvailableException();
     }
 
     /**
@@ -59,6 +86,7 @@ public class ConnectionHelper {
      */
     public void listenForConnection() throws IOException {
         socket = serverSocket.accept();
+        initializeSocket();
     }
 
     /**
@@ -69,13 +97,16 @@ public class ConnectionHelper {
      * @param progressBar Progress Bar Reference
      * @throws IOException
      */
-    public void readDataFromSocket(AppCompatActivity activity, ProgressBar progressBar) throws IOException {
-        var inputStream = socket.getInputStream();
-        var metaData = Utils.getFileMetaDataFromStream(inputStream);
-        assert metaData != null;
+    public void readDataFromSocket(AppCompatActivity activity, ProgressBar progressBar, TextView detailsView) throws IOException {
+        var metaData = Reader.readFileMetaDataFromNetworkStream(socketInput);
+        activity.runOnUiThread(() -> detailsView.setText("Now Receiving : " + metaData.name));
         File f = new File(Utils.getDataDirectoryPath() + metaData.name);
-        var outputStream = new FileOutputStream(f);
-        Utils.copyFile(activity, inputStream, outputStream, progressBar, metaData.size);
+        f.getParentFile().mkdirs();
+        f.createNewFile();
+        var fileOutput = new DataOutputStream(new FileOutputStream(f));
+        Reader.readBlockFromNetworkStream(socketInput, fileOutput, activity, progressBar);
+        fileOutput.close();
+        activity.runOnUiThread(() -> Utils.showToast(activity, "File Transfer Successful"));
     }
 
     /**
@@ -87,13 +118,11 @@ public class ConnectionHelper {
      * @throws IOException
      */
     public void pushDataToSocket(AppCompatActivity activity, ProgressBar progressBar, Uri fileUri) throws IOException {
-        var inputStream = activity.getContentResolver().openInputStream(fileUri);
+        var inputStream = new DataInputStream(activity.getContentResolver().openInputStream(fileUri));
         var metaData = Utils.getFileMetaDataFromUri(activity, fileUri);
-        var outputStream = socket.getOutputStream();
-        var json = new ObjectMapper().writeValueAsString(metaData);
-        outputStream.write(json.getBytes());
-        outputStream.write(0);
-        Utils.copyFile(activity, inputStream, outputStream, progressBar, metaData.size);
+        Reader.writeFileMetaDataToNetworkStream(metaData, socketOutput);
+        Reader.writeBlockToNetworkStream(inputStream, socketOutput, metaData.size, activity, progressBar);
+        inputStream.close();
     }
 
     /**
@@ -102,9 +131,21 @@ public class ConnectionHelper {
      * @throws IOException
      */
     public void cleanup() throws IOException {
+        if (socketInput != null)
+            socketInput.close();
+        if (socketOutput != null)
+            socketOutput.close();
         if (socket != null && socket.isConnected())
             socket.close();
         if (serverSocket != null && !serverSocket.isClosed())
             serverSocket.close();
+    }
+
+
+    private void initializeSocket() throws IOException {
+        if (socket == null)
+            return;
+        socketInput = new DataInputStream(socket.getInputStream());
+        socketOutput = new DataOutputStream(socket.getOutputStream());
     }
 }

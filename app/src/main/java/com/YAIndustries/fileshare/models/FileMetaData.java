@@ -1,5 +1,4 @@
-package com.YAIndustries.fileshare.models;
-
+package com.yaindustries.fileshare.models;
 
 public class FileMetaData {
     public String name;
