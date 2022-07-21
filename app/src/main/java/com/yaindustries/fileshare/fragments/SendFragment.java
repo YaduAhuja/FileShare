@@ -62,6 +62,7 @@ public class SendFragment extends Fragment {
         PeerListListener peerListListener = wifiP2pDeviceList -> {
             deviceList.clear();
             deviceList.addAll(wifiP2pDeviceList.getDeviceList());
+            Log.d(TAG, "onCreateView: " + deviceList);
             adapter.notifyDataSetChanged();
         };
 
@@ -124,9 +125,8 @@ public class SendFragment extends Fragment {
     }
 
     private void initializeViews(@NonNull View view) {
-        deviceRecyclerView = view.findViewById(R.id.deviceRecyclerView);
         searchDevicesButton = view.findViewById(R.id.searchDevices);
-        searchDevicesButton.setOnClickListener((listener) -> searchDevices());
+        deviceRecyclerView = view.findViewById(R.id.deviceRecyclerView);
         adapter = new SendFragmentRecyclerViewAdapter(deviceList, position -> {
             if (connecting)
                 return;
@@ -152,6 +152,8 @@ public class SendFragment extends Fragment {
                 Utils.showToast(getContext(), "Permission Not Found", Toast.LENGTH_SHORT);
             }
         });
+        deviceRecyclerView.setAdapter(adapter);
+        searchDevicesButton.setOnClickListener((listener) -> searchDevices());
     }
 
 

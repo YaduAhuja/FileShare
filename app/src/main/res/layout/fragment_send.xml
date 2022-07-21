@@ -28,6 +28,7 @@
         android:layout_marginVertical="10dp"
         app:layout_constraintTop_toBottomOf="@id/searchDevices"
         tools:itemCount="5"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
         tools:listitem="@layout/heading_detail_row_recycler_view" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

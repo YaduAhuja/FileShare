@@ -1,6 +1,7 @@
 package com.yaindustries.fileshare.ui;
 
 import android.net.wifi.p2p.WifiP2pDevice;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -35,6 +36,7 @@ public class SendFragmentRecyclerViewAdapter extends RecyclerView.Adapter<SendFr
         var device = deviceList.get(position);
         holder.tvHeading.setText(String.format("Device Name : %s", device.deviceName));
         holder.tvData.setText(String.format("Address : %s", device.deviceAddress));
+        Log.d("Recycler View", "onBindViewHolder: " + device);
     }
 
     @Override
