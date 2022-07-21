@@ -1,7 +1,6 @@
 package com.yaindustries.fileshare.fragments;
 
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,8 +18,6 @@ import com.yaindustries.fileshare.R;
 import com.yaindustries.fileshare.utilities.ConnectionHelper;
 import com.yaindustries.fileshare.utilities.Utils;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
@@ -63,12 +60,12 @@ public class TransferFragment extends Fragment {
     }
 
     private void startSending() {
-        for (var metaData : activity.sendFilesQueue.keySet()) {
+        for (var pair : activity.sendFilesQueue) {
             try {
-                activity.runOnUiThread(() -> fileDetailsTextView.setText("Now Transferring : " + metaData.name));
-                connectionHelper.pushDataToSocket(activity, fileTransferProgressBar, activity.sendFilesQueue.get(metaData));
+                activity.runOnUiThread(() -> fileDetailsTextView.setText("Now Transferring : " + pair.first.name));
+                connectionHelper.pushDataToSocket(activity, fileTransferProgressBar, pair.second);
             } catch (IOException e) {
-                activity.runOnUiThread(() -> Utils.showToast(getContext(), "Error in Transferring File " + metaData.name));
+                activity.runOnUiThread(() -> Utils.showToast(getContext(), "Error in Transferring File " + pair.first.name));
             }
         }
 

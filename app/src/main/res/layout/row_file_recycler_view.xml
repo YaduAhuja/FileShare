@@ -1,29 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".fragments.SendFragment">
+    android:layout_height="wrap_content"
+    android:layout_margin="10dp">
 
-    <Button
-        android:id="@+id/searchDevices"
-        android:layout_width="wrap_content"
+    <TextView
+        android:id="@+id/tvFileName"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Search Devices"
-        app:layout_constraintBottom_toTopOf="@+id/textViewSendDetails"
+        android:text="Redmi Note 10"
+        android:textSize="15sp"
+        app:layout_constraintBottom_toTopOf="@id/tvFileSize"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
-        android:id="@+id/textViewSendDetails"
-        android:layout_width="wrap_content"
+        android:id="@+id/tvFileSize"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Send Fragment"
+        android:text="Redmi Note 10"
+        android:textSize="12sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/tvFileName" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

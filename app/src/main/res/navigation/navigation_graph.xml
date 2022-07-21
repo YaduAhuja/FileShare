@@ -8,13 +8,13 @@
         android:id="@+id/homePageFragment"
         android:name="com.yaindustries.fileshare.fragments.HomePageFragment"
         android:label="fragment_home_page"
-        tools:layout="@layout/fragment_home_page" >
-        <action
-            android:id="@+id/action_homePageFragment_to_sendFragment"
-            app:destination="@id/sendFragment" />
+        tools:layout="@layout/fragment_home_page">
         <action
             android:id="@+id/action_homePageFragment_to_receiveFragment"
             app:destination="@id/receiveFragment" />
+        <action
+            android:id="@+id/action_homePageFragment_to_fileFragment2"
+            app:destination="@id/fileFragment" />
     </fragment>
     <fragment
         android:id="@+id/sendFragment"
@@ -29,7 +29,7 @@
         android:id="@+id/receiveFragment"
         android:name="com.yaindustries.fileshare.fragments.ReceiveFragment"
         android:label="fragment_receive"
-        tools:layout="@layout/fragment_receive" >
+        tools:layout="@layout/fragment_receive">
         <action
             android:id="@+id/action_receiveFragment_to_transferFragment"
             app:destination="@id/transferFragment" />
@@ -39,4 +39,13 @@
         android:name="com.yaindustries.fileshare.fragments.TransferFragment"
         android:label="fragment_transfer"
         tools:layout="@layout/fragment_transfer" />
+    <fragment
+        android:id="@+id/fileFragment"
+        android:name="com.yaindustries.fileshare.fragments.FileFragment"
+        android:label="fragment_file"
+        tools:layout="@layout/fragment_file">
+        <action
+            android:id="@+id/action_fileFragment_to_sendFragment"
+            app:destination="@id/sendFragment" />
+    </fragment>
 </navigation>

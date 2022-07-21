@@ -2,7 +2,6 @@ package com.yaindustries.fileshare.fragments;
 
 import android.content.BroadcastReceiver;
 import android.content.IntentFilter;
-import android.net.Uri;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.net.wifi.p2p.WifiP2pManager.ConnectionInfoListener;
@@ -16,8 +15,6 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -37,9 +34,8 @@ import java.util.concurrent.CompletableFuture;
 
 public class SendFragment extends Fragment {
     private final String TAG = "Send Fragment";
-    private final ActivityResultLauncher<String> filePicker;
     private TextView textViewDetails;
-    private Button selectButton;
+    private Button searchDevicesButton;
     private WifiP2pHelper wifiP2pHelper;
     private BroadcastReceiver broadcastReceiver;
     private ConnectionHelper connectionHelper;
@@ -48,18 +44,6 @@ public class SendFragment extends Fragment {
     private MainActivity activity;
 
     public SendFragment() {
-        filePicker = registerForActivityResult(
-                new ActivityResultContracts.GetContent(),
-                (Uri result) -> {
-                    if (result == null)
-                        return;
-                    var queryResult = getContext().getContentResolver().query(result, null, null, null, null);
-                    var metaData = Utils.getFileMetaDataFromCursor(queryResult);
-
-                    activity.sendFilesQueue.put(metaData, result);
-                    Utils.showToast(getContext(), "File Added to Queue", Toast.LENGTH_SHORT);
-//                    navController.navigate(R.id.transferFragment);
-                });
     }
 
     @Nullable
@@ -121,7 +105,12 @@ public class SendFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         navController = Navigation.findNavController(view);
-        startNetworkStack();
+        try {
+            connectionHelper.createClientSocket();
+        } catch (IOException e) {
+            Log.d(TAG, "onViewCreated: Cannot Create Socket");
+        }
+        searchDevices();
     }
 
     @Override
@@ -147,14 +136,12 @@ public class SendFragment extends Fragment {
 
     private void initializeViews(@NonNull View view) {
         textViewDetails = view.findViewById(R.id.textViewSendDetails);
-        selectButton = view.findViewById(R.id.selectFileButton);
-        selectButton.setOnClickListener((listener) -> {
-            filePicker.launch("*/*");
-        });
+        searchDevicesButton = view.findViewById(R.id.searchDevices);
+        searchDevicesButton.setOnClickListener((listener) -> searchDevices());
     }
 
 
-    private void startNetworkStack() {
+    private void searchDevices() {
         try {
             wifiP2pHelper.discoverPeers(new WifiP2pManager.ActionListener() {
                 @Override
@@ -167,11 +154,9 @@ public class SendFragment extends Fragment {
                     Log.d(TAG, "Discover Peers Request Failed");
                 }
             });
-
-            connectionHelper.createClientSocket();
-        } catch (PermissionNotFoundException | IOException e) {
-            Log.d(TAG, "startNetworkStack: Unable to Start Network Stack");
-            e.printStackTrace();
+        } catch (PermissionNotFoundException e) {
+            Log.d(TAG, "startNetworkStack: Unable to Search Peers");
+            Log.d(TAG, "startNetworkStack: " + e);
         }
     }
 }

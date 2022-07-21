@@ -62,7 +62,7 @@ public class HomePageFragment extends Fragment implements View.OnClickListener {
         if (!Utils.isLocationPermissionAvailable(getActivity()))
             return;
         if (view == sendButton)
-            navController.navigate(R.id.sendFragment);
+            navController.navigate(R.id.fileFragment);
         if (view == receiveButton)
             navController.navigate(R.id.receiveFragment);
     }

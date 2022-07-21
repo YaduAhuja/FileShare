@@ -8,18 +8,20 @@ import android.util.Log;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.yaindustries.fileshare.models.FileMetaData;
+import com.yaindustries.fileshare.models.Pair;
 import com.yaindustries.fileshare.utilities.ConnectionHelper;
 import com.yaindustries.fileshare.utilities.WifiP2pHelper;
 
 import java.io.IOException;
-import java.util.LinkedHashMap;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "Main Activity";
 
     public ConnectionHelper connectionHelper;
     public WifiP2pHelper wifiP2pHelper;
-    public LinkedHashMap<FileMetaData, Uri> sendFilesQueue = new LinkedHashMap<>();
+    public List<Pair<FileMetaData, Uri>> sendFilesQueue = new ArrayList<>();
     public boolean sending;
 
     @Override
