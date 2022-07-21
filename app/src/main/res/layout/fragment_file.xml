@@ -49,5 +49,5 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/fileFragmentButtonRow"
         tools:itemCount="5"
-        tools:listitem="@layout/row_file_recycler_view" />
+        tools:listitem="@layout/heading_detail_row_recycler_view" />
 </androidx.constraintlayout.widget.ConstraintLayout>

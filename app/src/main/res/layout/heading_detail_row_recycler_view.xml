@@ -6,25 +6,25 @@
     android:layout_margin="10dp">
 
     <TextView
-        android:id="@+id/tvFileName"
+        android:id="@+id/tvDetailRowHeading"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Redmi Note 10"
+        android:text="Lorem ipsum dolor sit amet"
         android:textSize="15sp"
-        app:layout_constraintBottom_toTopOf="@id/tvFileSize"
+        app:layout_constraintBottom_toTopOf="@id/tvDetailRowData"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
-        android:id="@+id/tvFileSize"
+        android:id="@+id/tvDetailRowData"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Redmi Note 10"
+        android:text="Lorem ipsum dolor sit amet"
         android:textSize="12sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvFileName" />
+        app:layout_constraintTop_toBottomOf="@id/tvDetailRowHeading" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,6 +1,6 @@
 package com.yaindustries.fileshare.ui;
 
-import android.net.Uri;
+import android.net.wifi.p2p.WifiP2pDevice;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,17 +11,15 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.yaindustries.fileshare.R;
 import com.yaindustries.fileshare.interfaces.RecyclerViewTaskInvoker;
-import com.yaindustries.fileshare.models.FileMetaData;
-import com.yaindustries.fileshare.models.Pair;
 
 import java.util.List;
 
-public class FileFragmentRecyclerViewAdapter extends RecyclerView.Adapter<FileFragmentRecyclerViewAdapter.ViewHolder> {
-    private final List<Pair<FileMetaData, Uri>> files;
+public class SendFragmentRecyclerViewAdapter extends RecyclerView.Adapter<SendFragmentRecyclerViewAdapter.ViewHolder> {
+    private final List<WifiP2pDevice> deviceList;
     private final RecyclerViewTaskInvoker taskInvoker;
 
-    public FileFragmentRecyclerViewAdapter(@NonNull List<Pair<FileMetaData, Uri>> files, @NonNull RecyclerViewTaskInvoker taskInvoker) {
-        this.files = files;
+    public SendFragmentRecyclerViewAdapter(@NonNull List<WifiP2pDevice> deviceList, @NonNull RecyclerViewTaskInvoker taskInvoker) {
+        this.deviceList = deviceList;
         this.taskInvoker = taskInvoker;
     }
 
@@ -34,28 +32,28 @@ public class FileFragmentRecyclerViewAdapter extends RecyclerView.Adapter<FileFr
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        var metaData = files.get(position).first;
-        holder.tvFileName.setText(String.format("Name : %s", metaData.name));
-        var valueInMB = (metaData.size * 1.0) / (1L << 20);
-        holder.tvFileSize.setText(String.format("Size : %.2f MB", valueInMB));
+        var device = deviceList.get(position);
+        holder.tvHeading.setText(String.format("Device Name : %s", device.deviceName));
+        holder.tvData.setText(String.format("Address : %s", device.deviceAddress));
     }
 
     @Override
     public int getItemCount() {
-        return files.size();
+        return deviceList.size();
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
-        private final TextView tvFileName;
-        private final TextView tvFileSize;
+        private final TextView tvHeading;
+        private final TextView tvData;
         private final RecyclerViewTaskInvoker taskInvoker;
 
         public ViewHolder(@NonNull View view, @NonNull RecyclerViewTaskInvoker taskInvoker) {
             super(view);
-
             this.taskInvoker = taskInvoker;
-            tvFileName = view.findViewById(R.id.tvDetailRowHeading);
-            tvFileSize = view.findViewById(R.id.tvDetailRowData);
+
+            tvHeading = view.findViewById(R.id.tvDetailRowHeading);
+            tvData = view.findViewById(R.id.tvDetailRowData);
+
             view.setOnClickListener(this);
         }
 

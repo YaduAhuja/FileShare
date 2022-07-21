@@ -12,7 +12,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -20,21 +19,24 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.yaindustries.fileshare.MainActivity;
 import com.yaindustries.fileshare.R;
 import com.yaindustries.fileshare.exceptions.NoPortAvailableException;
 import com.yaindustries.fileshare.exceptions.PermissionNotFoundException;
+import com.yaindustries.fileshare.ui.SendFragmentRecyclerViewAdapter;
 import com.yaindustries.fileshare.utilities.ConnectionHelper;
 import com.yaindustries.fileshare.utilities.Utils;
 import com.yaindustries.fileshare.utilities.WifiP2pHelper;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public class SendFragment extends Fragment {
     private final String TAG = "Send Fragment";
-    private TextView textViewDetails;
     private Button searchDevicesButton;
     private WifiP2pHelper wifiP2pHelper;
     private BroadcastReceiver broadcastReceiver;
@@ -42,8 +44,13 @@ public class SendFragment extends Fragment {
     private IntentFilter intentFilter;
     private NavController navController;
     private MainActivity activity;
+    private final List<WifiP2pDevice> deviceList;
+    private RecyclerView deviceRecyclerView;
+    private SendFragmentRecyclerViewAdapter adapter;
+    private boolean connecting = false;
 
     public SendFragment() {
+        deviceList = new ArrayList<>();
     }
 
     @Nullable
@@ -53,27 +60,9 @@ public class SendFragment extends Fragment {
         initializeViews(view);
 
         PeerListListener peerListListener = wifiP2pDeviceList -> {
-            var deviceList = wifiP2pDeviceList.getDeviceList().toArray(new WifiP2pDevice[0]);
-            textViewDetails.setText(wifiP2pDeviceList.toString());
-            textViewDetails.setOnClickListener((listener) -> {
-                textViewDetails.setOnClickListener(null);
-                try {
-                    wifiP2pHelper.connectToDevice(deviceList[0], new WifiP2pManager.ActionListener() {
-                        @Override
-                        public void onSuccess() {
-                            Log.d(TAG, "Connected to Device: " + deviceList[0]);
-                        }
-
-                        @Override
-                        public void onFailure(int i) {
-                            Log.d(TAG, "Connection to Device Failed");
-                        }
-                    });
-                } catch (PermissionNotFoundException e) {
-                    Log.d(TAG, "Permission Not Found");
-                    Utils.showToast(getContext(), "Permission Not Found", Toast.LENGTH_SHORT);
-                }
-            });
+            deviceList.clear();
+            deviceList.addAll(wifiP2pDeviceList.getDeviceList());
+            adapter.notifyDataSetChanged();
         };
 
         ConnectionInfoListener connectionInfoListener = wifiP2pInfo -> {
@@ -135,9 +124,34 @@ public class SendFragment extends Fragment {
     }
 
     private void initializeViews(@NonNull View view) {
-        textViewDetails = view.findViewById(R.id.textViewSendDetails);
+        deviceRecyclerView = view.findViewById(R.id.deviceRecyclerView);
         searchDevicesButton = view.findViewById(R.id.searchDevices);
         searchDevicesButton.setOnClickListener((listener) -> searchDevices());
+        adapter = new SendFragmentRecyclerViewAdapter(deviceList, position -> {
+            if (connecting)
+                return;
+            connecting = true;
+            var device = deviceList.get(position);
+            try {
+
+                wifiP2pHelper.connectToDevice(device, new WifiP2pManager.ActionListener() {
+                    @Override
+                    public void onSuccess() {
+                        Log.d(TAG, "Connected to Device: " + device);
+                        connecting = false;
+                    }
+
+                    @Override
+                    public void onFailure(int i) {
+                        Log.d(TAG, "Connection to Device Failed");
+                        connecting = false;
+                    }
+                });
+            } catch (PermissionNotFoundException e) {
+                Log.d(TAG, "Permission Not Found");
+                Utils.showToast(getContext(), "Permission Not Found", Toast.LENGTH_SHORT);
+            }
+        });
     }
 
 
@@ -155,8 +169,8 @@ public class SendFragment extends Fragment {
                 }
             });
         } catch (PermissionNotFoundException e) {
-            Log.d(TAG, "startNetworkStack: Unable to Search Peers");
-            Log.d(TAG, "startNetworkStack: " + e);
+            Log.d(TAG, "searchDevices: Unable to Search Peers");
+            Log.d(TAG, "searchDevices: " + e);
         }
     }
 }
