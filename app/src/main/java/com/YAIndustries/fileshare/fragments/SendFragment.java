@@ -23,6 +23,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.yaindustries.fileshare.MainActivity;
 import com.yaindustries.fileshare.R;
@@ -46,6 +47,7 @@ public class SendFragment extends Fragment {
     private IntentFilter intentFilter;
     private NavController navController;
     private MainActivity activity;
+    RecyclerView recyclerView;
 
     public SendFragment() {
         filePicker = registerForActivityResult(
@@ -74,7 +76,7 @@ public class SendFragment extends Fragment {
             textViewDetails.setOnClickListener((listener) -> {
                 textViewDetails.setOnClickListener(null);
                 try {
-                    wifiP2pHelper.connectToDevice(deviceList[0], new WifiP2pManager.ActionListener() {
+                    wifiP2pHelper.connectToDevice(deviceList[1], new WifiP2pManager.ActionListener() {
                         @Override
                         public void onSuccess() {
                             Log.d(TAG, "Connected to Device: " + deviceList[0]);
@@ -148,6 +150,7 @@ public class SendFragment extends Fragment {
     private void initializeViews(@NonNull View view) {
         textViewDetails = view.findViewById(R.id.textViewSendDetails);
         selectButton = view.findViewById(R.id.selectFileButton);
+//        recyclerView = view.findViewById(R.id.textViewSendDetails);
         selectButton.setOnClickListener((listener) -> {
             filePicker.launch("*/*");
         });
