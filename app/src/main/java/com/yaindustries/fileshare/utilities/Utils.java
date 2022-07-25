@@ -92,6 +92,12 @@ public class Utils {
         return manufacturer + "-" + model;
     }
 
+    public static boolean isStoragePermissionAvailable(Context context) {
+        return  Build.VERSION_CODES.Q < Build.VERSION.SDK_INT ||
+                (ActivityCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
+                ActivityCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED);
+    }
+
     public static boolean isLocationPermissionAvailable(Context context) {
         return ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
     }
