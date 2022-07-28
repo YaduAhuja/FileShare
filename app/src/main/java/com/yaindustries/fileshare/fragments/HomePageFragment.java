@@ -22,7 +22,9 @@ import androidx.fragment.app.Fragment;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 
+import com.yaindustries.fileshare.MainActivity;
 import com.yaindustries.fileshare.R;
+import com.yaindustries.fileshare.interfaces.OnResultTask;
 import com.yaindustries.fileshare.utilities.Utils;
 
 import java.util.ArrayList;
@@ -35,15 +37,16 @@ public class HomePageFragment extends Fragment implements View.OnClickListener {
     private ActivityResultLauncher<String[]> locationRequest;
     private LocationManager locationManager;
     private Runnable pendingTask;
+    private MainActivity mainActivity;
 
     public HomePageFragment() {
     }
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        mainActivity = (MainActivity) getActivity();
         var view = inflater.inflate(R.layout.fragment_home_page, container, false);
         initialize(view);
-
         locationRequest = registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), (result) -> {
             Log.d(TAG, "onCreateView: " + result);
             boolean isAvailable = true;
@@ -81,7 +84,7 @@ public class HomePageFragment extends Fragment implements View.OnClickListener {
             return;
         }
 
-        if(Utils.isStoragePermissionAvailable(getContext())) {
+        if(!Utils.isStoragePermissionAvailable(getContext())) {
             Utils.showToast(getContext(), "File Share cannot work without Storage Permission");
             return;
         }
@@ -100,8 +103,9 @@ public class HomePageFragment extends Fragment implements View.OnClickListener {
                     )
                     .create();
             dialog.show();
-        }
-        pendingTask = () -> navigateToFragments(view);
+            pendingTask = () -> navigateToFragments(view);
+        } else
+            navigateToFragments(view);
     }
 
 
@@ -124,9 +128,12 @@ public class HomePageFragment extends Fragment implements View.OnClickListener {
     @Override
     public void onResume() {
         super.onResume();
-        isLocationOn();
-        if(pendingTask != null)
+        mainActivity.sendFilesQueue.clear();
+
+        if(isLocationOn() && pendingTask != null) {
             pendingTask.run();
+            pendingTask = null;
+        }
     }
 
     private boolean isLocationOn() {

@@ -15,6 +15,7 @@ import androidx.navigation.Navigation;
 
 import com.yaindustries.fileshare.MainActivity;
 import com.yaindustries.fileshare.R;
+import com.yaindustries.fileshare.models.TransferUiElements;
 import com.yaindustries.fileshare.utilities.ConnectionHelper;
 import com.yaindustries.fileshare.utilities.Utils;
 
@@ -25,7 +26,7 @@ public class TransferFragment extends Fragment {
 
     private NavController navController;
     private MainActivity activity;
-    private TextView fileDetailsTextView;
+    private TextView fileDetailsTextView, progressDetailsTextView;
     private ProgressBar fileTransferProgressBar;
     private ConnectionHelper connectionHelper;
 
@@ -57,13 +58,15 @@ public class TransferFragment extends Fragment {
     private void initializeViews(@NonNull View view) {
         fileDetailsTextView = view.findViewById(R.id.textViewTransferFileDetails);
         fileTransferProgressBar = view.findViewById(R.id.fileTransferProgressBar);
+        progressDetailsTextView = view.findViewById(R.id.textViewProgressBar);
     }
 
     private void startSending() {
         for (var pair : activity.sendFilesQueue) {
             try {
                 activity.runOnUiThread(() -> fileDetailsTextView.setText("Now Transferring : " + pair.first.name));
-                connectionHelper.pushDataToSocket(activity, fileTransferProgressBar, pair.second);
+                var uiElements = new TransferUiElements(activity, fileTransferProgressBar, progressDetailsTextView);
+                connectionHelper.pushDataToSocket(uiElements, pair.second);
             } catch (IOException e) {
                 activity.runOnUiThread(() -> Utils.showToast(getContext(), "Error in Transferring File " + pair.first.name));
             }
@@ -74,7 +77,8 @@ public class TransferFragment extends Fragment {
 
     private void startReceiving() {
         try {
-            connectionHelper.readDataFromSocket(activity, fileTransferProgressBar, fileDetailsTextView);
+            var uiElements = new TransferUiElements(activity, fileTransferProgressBar, progressDetailsTextView);
+            connectionHelper.readDataFromSocket(uiElements, fileDetailsTextView);
         } catch (IOException e) {
             activity.runOnUiThread(() -> Utils.showToast(getContext(), "Error in Receiving File "));
         }

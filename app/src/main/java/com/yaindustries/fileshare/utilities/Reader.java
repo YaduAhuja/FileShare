@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.yaindustries.fileshare.models.FileMetaData;
+import com.yaindustries.fileshare.models.TransferUiElements;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -35,12 +36,12 @@ public class Reader {
     }
 
     public static void readBlockFromNetworkStream(DataInputStream is, DataOutputStream os) throws IOException {
-        readBlockFromNetworkStream(is, os, null, null);
+        readBlockFromNetworkStream(is, os, null);
     }
 
-    public static void readBlockFromNetworkStream(DataInputStream is, DataOutputStream os, AppCompatActivity activity, ProgressBar progressBar) throws IOException {
+    public static void readBlockFromNetworkStream(DataInputStream is, DataOutputStream os, TransferUiElements uiElements) throws IOException {
         long size = is.readLong();
-        transferBytes(is, os, size, activity, progressBar);
+        transferBytes(is, os, size, uiElements);
     }
 
     //Write Methods
@@ -58,16 +59,16 @@ public class Reader {
     }
 
     public static void writeBlockToNetworkStream(DataInputStream is, DataOutputStream os, long size) throws IOException {
-        writeBlockToNetworkStream(is, os, size, null, null);
+        writeBlockToNetworkStream(is, os, size, null);
     }
 
-    public static void writeBlockToNetworkStream(DataInputStream is, DataOutputStream os, long size, AppCompatActivity activity, ProgressBar progressBar) throws IOException {
+    public static void writeBlockToNetworkStream(DataInputStream is, DataOutputStream os, long size, TransferUiElements uiElements) throws IOException {
         os.writeLong(size);
-        transferBytes(is, os, size, activity, progressBar);
+        transferBytes(is, os, size, uiElements);
     }
 
     //Utility Methods
-    private static void transferBytes(DataInputStream is, DataOutputStream os, long size, AppCompatActivity activity, ProgressBar progressBar) throws IOException {
+    private static void transferBytes(DataInputStream is, DataOutputStream os, long size, TransferUiElements uiElements) throws IOException {
         long count = 0;
         int len;
         while (count < size) {
@@ -77,16 +78,20 @@ public class Reader {
             count += len;
             int progress = (int) (((count * 1.0) / size) * 100);
             Log.d(TAG, "transferBytes: " + progress);
-            notifyProgress(activity, progressBar, progress);
+            notifyProgress(uiElements, progress);
         }
     }
 
-    private static void notifyProgress(AppCompatActivity activity, ProgressBar progressBar, int progress) {
-        if (activity == null || progressBar == null) {
-            Log.d(TAG, "notifyProgress: Activity or progress is null");
+    private static void notifyProgress(TransferUiElements uiElements, int progress) {
+        if (uiElements == null) {
+            Log.d(TAG, "notifyProgress: uiElements is null");
             return;
         }
 
-        activity.runOnUiThread(() -> progressBar.setProgress(progress));
+        uiElements.activity.runOnUiThread(() -> {
+            uiElements.progressBar.setProgress(progress);
+            final String progressMessage = progress+" %";
+            uiElements.progressTv.setText(progressMessage);
+        });
     }
 }

@@ -7,6 +7,7 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.yaindustries.fileshare.exceptions.NoPortAvailableException;
+import com.yaindustries.fileshare.models.TransferUiElements;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -93,35 +94,35 @@ public class ConnectionHelper {
      * Reads Data from the Socket and Parses the FileMetaData and pushes data
      * to the FileDirectories
      *
-     * @param activity    Activity which is invoking this method
-     * @param progressBar Progress Bar Reference
+     * @param uiElements  UI elements which will be updated on progress change
+     * @param detailsView UI Element where the filename is to be shown
      * @throws IOException
      */
-    public void readDataFromSocket(AppCompatActivity activity, ProgressBar progressBar, TextView detailsView) throws IOException {
+    public void readDataFromSocket(TransferUiElements uiElements, TextView detailsView) throws IOException {
         var metaData = Reader.readFileMetaDataFromNetworkStream(socketInput);
-        activity.runOnUiThread(() -> detailsView.setText("Now Receiving : " + metaData.name));
+        uiElements.activity.runOnUiThread(() -> detailsView.setText("Now Receiving : " + metaData.name));
         File f = new File(Utils.getDataDirectoryPath() + metaData.name);
         f.getParentFile().mkdirs();
         f.createNewFile();
         var fileOutput = new DataOutputStream(new FileOutputStream(f));
-        Reader.readBlockFromNetworkStream(socketInput, fileOutput, activity, progressBar);
+        Reader.readBlockFromNetworkStream(socketInput, fileOutput, uiElements);
         fileOutput.close();
-        activity.runOnUiThread(() -> Utils.showToast(activity, "File Transfer Successful"));
+        uiElements.activity.runOnUiThread(() -> Utils.showToast(uiElements.activity, "File Transfer Successful"));
     }
 
     /**
      * Reads Data from the File Directories and Parses the FileMetaData
      * and pushes data to the Socket
      *
-     * @param activity    Activity which is invoking this method
-     * @param progressBar Progress Bar Reference
+     * @param uiElements  UI elements which will be updated on progress change
      * @throws IOException
      */
-    public void pushDataToSocket(AppCompatActivity activity, ProgressBar progressBar, Uri fileUri) throws IOException {
+    public void pushDataToSocket(TransferUiElements uiElements, Uri fileUri) throws IOException {
+        var activity = uiElements.activity;
         var inputStream = new DataInputStream(activity.getContentResolver().openInputStream(fileUri));
         var metaData = Utils.getFileMetaDataFromUri(activity, fileUri);
         Reader.writeFileMetaDataToNetworkStream(metaData, socketOutput);
-        Reader.writeBlockToNetworkStream(inputStream, socketOutput, metaData.size, activity, progressBar);
+        Reader.writeBlockToNetworkStream(inputStream, socketOutput, metaData.size, uiElements);
         inputStream.close();
     }
 
