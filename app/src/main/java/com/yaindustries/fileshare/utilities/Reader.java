@@ -16,8 +16,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 public class Reader {
-    //1MB Buffer Length for Reader
-    private static final int BUF_LEN = 1 << 20;
+    //4MB Buffer Length for Reader
+    private static final int BUF_LEN = 1 << 22;
     private static final byte[] BUF = new byte[BUF_LEN];
     private static final String TAG = "Reader";
     private static ObjectMapper objectMapper;
