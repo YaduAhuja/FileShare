@@ -25,7 +25,7 @@ import java.util.concurrent.CompletableFuture;
 public class TransferFragment extends Fragment {
 
     private NavController navController;
-    private MainActivity activity;
+    private MainActivity mainActivity;
     private TextView fileDetailsTextView, progressDetailsTextView;
     private ProgressBar fileTransferProgressBar;
     private ConnectionHelper connectionHelper;
@@ -37,9 +37,7 @@ public class TransferFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_transfer, container, false);
-        activity = (MainActivity) getActivity();
-        connectionHelper = activity.connectionHelper;
-        initializeViews(view);
+        initialize(view);
         return view;
     }
 
@@ -48,39 +46,46 @@ public class TransferFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         navController = Navigation.findNavController(view);
 
-        if (activity.sending)
+        if (mainActivity.sending)
             CompletableFuture.runAsync(this::startSending);
         else
             CompletableFuture.runAsync(this::startReceiving);
     }
 
 
-    private void initializeViews(@NonNull View view) {
+    private void initialize(@NonNull View view) {
+        //Data Members
+        mainActivity = (MainActivity) getActivity();
+        connectionHelper = mainActivity.connectionHelper;
+        navController = Navigation.findNavController(view);
+
+        //Ui Elements
         fileDetailsTextView = view.findViewById(R.id.textViewTransferFileDetails);
         fileTransferProgressBar = view.findViewById(R.id.fileTransferProgressBar);
         progressDetailsTextView = view.findViewById(R.id.textViewProgressBar);
     }
 
     private void startSending() {
-        for (var pair : activity.sendFilesQueue) {
+        for (var pair : mainActivity.sendFilesQueue) {
             try {
-                activity.runOnUiThread(() -> fileDetailsTextView.setText("Now Transferring : " + pair.first.name));
-                var uiElements = new TransferUiElements(activity, fileTransferProgressBar, progressDetailsTextView);
+                mainActivity.runOnUiThread(() -> fileDetailsTextView.setText("Now Transferring : " + pair.first.name));
+                var uiElements = new TransferUiElements(mainActivity, fileTransferProgressBar, progressDetailsTextView);
                 connectionHelper.pushDataToSocket(uiElements, pair.second);
+                mainActivity.dbRepository.fileMetaDataDao.insertFileMetaData(pair.first);
             } catch (IOException e) {
-                activity.runOnUiThread(() -> Utils.showToast(getContext(), "Error in Transferring File " + pair.first.name));
+                mainActivity.runOnUiThread(() -> Utils.showToast(getContext(), "Error in Transferring File " + pair.first.name));
             }
         }
 
-        activity.runOnUiThread(() -> Utils.showToast(getContext(), "File Transfer Complete"));
+        mainActivity.runOnUiThread(() -> Utils.showToast(getContext(), "File Transfer Complete"));
     }
 
     private void startReceiving() {
         try {
-            var uiElements = new TransferUiElements(activity, fileTransferProgressBar, progressDetailsTextView);
+            var uiElements = new TransferUiElements(mainActivity, fileTransferProgressBar, progressDetailsTextView);
             connectionHelper.readDataFromSocket(uiElements, fileDetailsTextView);
         } catch (IOException e) {
-            activity.runOnUiThread(() -> Utils.showToast(getContext(), "Error in Receiving File "));
+            mainActivity.runOnUiThread(() -> Utils.showToast(getContext(), "Error in Receiving File "));
         }
     }
 }
