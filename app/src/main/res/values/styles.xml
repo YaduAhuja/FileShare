@@ -1,5 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <style name="heading">
+
+    </style>
+    <style name="heading_primary">
+        <item name="android:layout_marginTop">24dp</item>
+        <item name="android:layout_marginStart">16dp</item>
+        <item name="android:textSize">28sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
     <style name="rounded_button_colored">
         <item name="cornerRadius">50dp</item>
         <item name="android:textStyle">bold</item>

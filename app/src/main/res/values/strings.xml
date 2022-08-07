@@ -14,4 +14,10 @@
     <string name="s">S</string>
     <string name="hare">hare</string>
     <string name="share_files_to_see_history">Share Files to see History.</string>
+    <string name="select">Select</string>
+    <string name="select_file">Select File</string>
+    <string name="confirm">Confirm</string>
+    <string name="file">File</string>
+    <string name="share">Share</string>
+    <string name="content_selection">Content Selection</string>
 </resources>

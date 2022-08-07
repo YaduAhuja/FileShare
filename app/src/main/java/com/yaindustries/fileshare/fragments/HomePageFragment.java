@@ -52,7 +52,7 @@ public class HomePageFragment extends Fragment implements View.OnClickListener {
     private Runnable pendingTask;
     private MainActivity mainActivity;
     private RecyclerView fileRecyclerView;
-    private List<FileMetaData> fileInfoList = new ArrayList<>();
+    private final List<FileMetaData> fileInfoList = new ArrayList<>();
     private HomeFragmentRecyclerViewAdapter adapter;
     private FragmentActivity curActivity;
     private TextView recyclerViewAlternateTv;
