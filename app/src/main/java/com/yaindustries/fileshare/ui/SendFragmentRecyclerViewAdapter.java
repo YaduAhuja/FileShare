@@ -44,7 +44,7 @@ public class SendFragmentRecyclerViewAdapter extends RecyclerView.Adapter<SendFr
         return deviceList.size();
     }
 
-    public static class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
+    protected static class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
         private final TextView tvHeading;
         private final TextView tvData;
         private final RecyclerViewTaskInvoker taskInvoker;

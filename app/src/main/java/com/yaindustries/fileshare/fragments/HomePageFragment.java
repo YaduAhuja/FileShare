@@ -13,21 +13,34 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.TextView;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
+import androidx.recyclerview.widget.RecyclerView;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yaindustries.fileshare.MainActivity;
 import com.yaindustries.fileshare.R;
+import com.yaindustries.fileshare.database.DBRepository;
+import com.yaindustries.fileshare.database.FileShareDatabase;
 import com.yaindustries.fileshare.interfaces.OnResultTask;
+import com.yaindustries.fileshare.models.FileMetaData;
+import com.yaindustries.fileshare.ui.HomeFragmentRecyclerViewAdapter;
 import com.yaindustries.fileshare.utilities.Utils;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 
 public class HomePageFragment extends Fragment implements View.OnClickListener {
@@ -38,13 +51,16 @@ public class HomePageFragment extends Fragment implements View.OnClickListener {
     private LocationManager locationManager;
     private Runnable pendingTask;
     private MainActivity mainActivity;
+    private RecyclerView fileRecyclerView;
+    private List<FileMetaData> fileInfoList = new ArrayList<>();
+    private HomeFragmentRecyclerViewAdapter adapter;
+    private FragmentActivity curActivity;
+    private TextView recyclerViewAlternateTv;
 
-    public HomePageFragment() {
-    }
+    public HomePageFragment() {}
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        mainActivity = (MainActivity) getActivity();
         var view = inflater.inflate(R.layout.fragment_home_page, container, false);
         initialize(view);
         locationRequest = registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), (result) -> {
@@ -110,26 +126,49 @@ public class HomePageFragment extends Fragment implements View.OnClickListener {
 
 
     public void initialize(View view) {
+        //Initializing Members
+        mainActivity = (MainActivity) getActivity();
+        curActivity = getActivity();
+        locationManager = (LocationManager) getContext().getSystemService(LOCATION_SERVICE);
+        adapter = new HomeFragmentRecyclerViewAdapter(fileInfoList);
+
+        //Initializing Views
         sendButton = view.findViewById(R.id.sendButton);
         receiveButton = view.findViewById(R.id.receiveButton);
+        fileRecyclerView = view.findViewById(R.id.homePageRecyclerView);
+        recyclerViewAlternateTv= view.findViewById(R.id.homePageAlternateRecyclerTv);
 
         sendButton.setOnClickListener(this);
         receiveButton.setOnClickListener(this);
-        locationManager = (LocationManager) getContext().getSystemService(LOCATION_SERVICE);
+        fileRecyclerView.setAdapter(adapter);
     }
 
 
     @Override
     public void onStart() {
         super.onStart();
-        isLocationOn();
+        CompletableFuture.runAsync(() -> {
+            fileInfoList.clear();
+            var data = mainActivity.dbRepository.fileMetaDataDao.getLastNFileMetaData(20);
+            fileInfoList.addAll(data);
+            if (fileInfoList.isEmpty())
+                curActivity.runOnUiThread(() -> {
+                    fileRecyclerView.setVisibility(View.INVISIBLE);
+                    recyclerViewAlternateTv.setVisibility(View.VISIBLE);
+                });
+            else
+                curActivity.runOnUiThread(() -> {
+                    fileRecyclerView.setVisibility(View.VISIBLE);
+                    recyclerViewAlternateTv.setVisibility(View.INVISIBLE);
+                    adapter.notifyDataSetChanged();
+                });
+        });
     }
 
     @Override
     public void onResume() {
         super.onResume();
         mainActivity.sendFilesQueue.clear();
-
         if(isLocationOn() && pendingTask != null) {
             pendingTask.run();
             pendingTask = null;
@@ -141,9 +180,17 @@ public class HomePageFragment extends Fragment implements View.OnClickListener {
     }
 
     private void navigateToFragments(View view) {
-        if (view == sendButton)
-            navController.navigate(R.id.fileFragment);
-        if (view == receiveButton)
+        if(view == sendButton) {
+            CompletableFuture.runAsync(() -> mainActivity.dbRepository.clear());
+//            navController.navigate(R.id.sendFragment);
+        }
+
+        if (view == receiveButton) {
+            CompletableFuture.runAsync(() -> {
+                var metaData = new FileMetaData(((int)(Math.random() * 100)) + "dsandjsak", (int)(Math.random() * 1000000));
+                mainActivity.dbRepository.fileMetaDataDao.insertFileMetaData(metaData);
+            });
             navController.navigate(R.id.receiveFragment);
+        }
     }
 }

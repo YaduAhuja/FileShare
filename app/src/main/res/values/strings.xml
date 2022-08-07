@@ -4,4 +4,14 @@
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="Ok">Ok</string>
     <string name="Cancel">Cancel</string>
+    <string name="send">Send</string>
+    <string name="receive">Receive</string>
+    <string name="letsGetYou">Let\'s get you</string>
+    <string name="started">started!</string>
+    <string name="history">History</string>
+    <string name="f">F</string>
+    <string name="ile">ile</string>
+    <string name="s">S</string>
+    <string name="hare">hare</string>
+    <string name="share_files_to_see_history">Share Files to see History.</string>
 </resources>

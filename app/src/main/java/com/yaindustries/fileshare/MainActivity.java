@@ -6,7 +6,10 @@ import android.os.Bundle;
 import android.util.Log;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 
+import com.yaindustries.fileshare.database.DBRepository;
+import com.yaindustries.fileshare.database.FileShareDatabase;
 import com.yaindustries.fileshare.models.FileMetaData;
 import com.yaindustries.fileshare.models.Pair;
 import com.yaindustries.fileshare.utilities.ConnectionHelper;
@@ -23,11 +26,15 @@ public class MainActivity extends AppCompatActivity {
     public WifiP2pHelper wifiP2pHelper;
     public List<Pair<FileMetaData, Uri>> sendFilesQueue = new ArrayList<>();
     public boolean sending;
+    public DBRepository dbRepository;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+//        Change This in Later Update
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        dbRepository = new DBRepository(getApplicationContext());
     }
 
     @Override

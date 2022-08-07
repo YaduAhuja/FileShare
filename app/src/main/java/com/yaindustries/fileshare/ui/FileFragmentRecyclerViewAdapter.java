@@ -13,8 +13,10 @@ import com.yaindustries.fileshare.R;
 import com.yaindustries.fileshare.interfaces.RecyclerViewTaskInvoker;
 import com.yaindustries.fileshare.models.FileMetaData;
 import com.yaindustries.fileshare.models.Pair;
+import com.yaindustries.fileshare.utilities.Utils;
 
 import java.util.List;
+import java.util.Locale;
 
 public class FileFragmentRecyclerViewAdapter extends RecyclerView.Adapter<FileFragmentRecyclerViewAdapter.ViewHolder> {
     private final List<Pair<FileMetaData, Uri>> files;
@@ -35,9 +37,8 @@ public class FileFragmentRecyclerViewAdapter extends RecyclerView.Adapter<FileFr
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         var metaData = files.get(position).first;
-        holder.tvFileName.setText(String.format("Name : %s", metaData.name));
-        var valueInMB = (metaData.size * 1.0) / (1L << 20);
-        holder.tvFileSize.setText(String.format("Size : %.2f MB", valueInMB));
+        holder.tvFileName.setText(metaData.name);
+        holder.tvFileSize.setText(Utils.getFileSizeInMBs(metaData.size));
     }
 
     @Override
@@ -45,7 +46,7 @@ public class FileFragmentRecyclerViewAdapter extends RecyclerView.Adapter<FileFr
         return files.size();
     }
 
-    public static class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
+    protected static class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
         private final TextView tvFileName;
         private final TextView tvFileSize;
         private final RecyclerViewTaskInvoker taskInvoker;

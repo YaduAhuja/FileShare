@@ -15,6 +15,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 public class Reader {
     //4MB Buffer Length for Reader
@@ -51,8 +52,9 @@ public class Reader {
                 objectMapper = new ObjectMapper();
             objectWriter = objectMapper.writerWithDefaultPrettyPrinter();
         }
+
         var json = objectWriter.writeValueAsString(metaData);
-        var jsonBytes = json.getBytes("UTF-8");
+        var jsonBytes = json.getBytes(StandardCharsets.UTF_8);
         var jsonStream = new DataInputStream(new ByteArrayInputStream(jsonBytes));
 
         writeBlockToNetworkStream(jsonStream, os, jsonBytes.length);
