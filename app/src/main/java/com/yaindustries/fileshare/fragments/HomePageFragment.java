@@ -181,8 +181,8 @@ public class HomePageFragment extends Fragment implements View.OnClickListener {
 
     private void navigateToFragments(View view) {
         if(view == sendButton) {
-            CompletableFuture.runAsync(() -> mainActivity.dbRepository.clear());
-//            navController.navigate(R.id.sendFragment);
+//            CompletableFuture.runAsync(() -> mainActivity.dbRepository.clear());
+            navController.navigate(R.id.fileFragment);
         }
 
         if (view == receiveButton) {

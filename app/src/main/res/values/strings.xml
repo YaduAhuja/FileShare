@@ -20,4 +20,6 @@
     <string name="file">File</string>
     <string name="share">Share</string>
     <string name="content_selection">Content Selection</string>
+    <string name="select_files_to_add_to_transfer_list">Select Files to add to transfer list.</string>
+    <string name="back">Back</string>
 </resources>
