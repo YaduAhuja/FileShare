@@ -1,16 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="heading">
-
+        <item name="android:textStyle">bold</item>
     </style>
-    <style name="heading_primary">
+    <style name="heading_primary" parent="heading">
         <item name="android:textSize">28sp</item>
-        <item name="android:textStyle">bold</item>
     </style>
-    <style name="heading_secondary">
-        <item name="android:textSize">22sp</item>
-        <item name="android:textStyle">bold</item>
+    <style name="heading_secondary" parent="heading">
+        <item name="android:textSize">18sp</item>
     </style>
+    
+    <style name="heading_tertiary" parent="heading">
+        <item name="android:textSize">16sp</item>
+    </style>
+
     <style name="rounded_button_colored">
         <item name="cornerRadius">50dp</item>
         <item name="android:textStyle">bold</item>

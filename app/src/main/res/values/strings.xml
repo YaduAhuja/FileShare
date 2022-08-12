@@ -19,7 +19,17 @@
     <string name="confirm">Confirm</string>
     <string name="file">File</string>
     <string name="share">Share</string>
+    <string name="receiving">Receiving</string>
     <string name="content_selection">Content Selection</string>
     <string name="select_files_to_add_to_transfer_list">Select Files to add to transfer list.</string>
     <string name="back">Back</string>
+    <string name="send_p2p">Send P2P</string>
+    <string name="available_devices">Available Devices</string>
+    <string name="refresh_devices">Refresh Devices</string>
+    <string name="refresh">Refresh</string>
+    <string name="nearby_devices_once_scanned_will_be_shown_here">Nearby Devices once scanned will be shown here.</string>
+    <string name="available_devices_will_be_shown_here">Available Devices will be shown here.</string>
+    <string name="sending">Sending</string>
+    <string name="transfer_in_progress">Transfer in Progress</string>
+    <string name="disconnect">Disconnect</string>
 </resources>

@@ -12,6 +12,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -35,9 +37,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-public class SendFragment extends Fragment {
+public class SendFragment extends Fragment implements View.OnClickListener {
     private final String TAG = "Send Fragment";
     private Button searchDevicesButton;
+    private ImageButton backButton;
     private WifiP2pHelper wifiP2pHelper;
     private BroadcastReceiver broadcastReceiver;
     private ConnectionHelper connectionHelper;
@@ -47,6 +50,7 @@ public class SendFragment extends Fragment {
     private final List<WifiP2pDevice> deviceList;
     private RecyclerView deviceRecyclerView;
     private SendFragmentRecyclerViewAdapter adapter;
+    private TextView alternateTv;
     private boolean connecting = false;
 
     public SendFragment() {
@@ -64,6 +68,13 @@ public class SendFragment extends Fragment {
             deviceList.addAll(wifiP2pDeviceList.getDeviceList());
             Log.d(TAG, "onCreateView: " + deviceList);
             adapter.notifyDataSetChanged();
+            if(deviceList.isEmpty()) {
+                deviceRecyclerView.setVisibility(View.INVISIBLE);
+                alternateTv.setVisibility(View.VISIBLE);
+            } else {
+                alternateTv.setVisibility(View.INVISIBLE);
+                deviceRecyclerView.setVisibility(View.VISIBLE);
+            }
         };
 
         ConnectionInfoListener connectionInfoListener = wifiP2pInfo -> {
@@ -126,7 +137,10 @@ public class SendFragment extends Fragment {
 
     private void initializeViews(@NonNull View view) {
         searchDevicesButton = view.findViewById(R.id.searchDevices);
+        backButton = view.findViewById(R.id.sendFragmentBackButton);
         deviceRecyclerView = view.findViewById(R.id.deviceRecyclerView);
+        alternateTv = view.findViewById(R.id.sendFragmentAlternateTv);
+
         adapter = new SendFragmentRecyclerViewAdapter(deviceList, position -> {
             if (connecting)
                 return;
@@ -153,7 +167,9 @@ public class SendFragment extends Fragment {
             }
         });
         deviceRecyclerView.setAdapter(adapter);
-        searchDevicesButton.setOnClickListener((listener) -> searchDevices());
+
+        searchDevicesButton.setOnClickListener(this);
+        backButton.setOnClickListener(this);
     }
 
 
@@ -174,5 +190,13 @@ public class SendFragment extends Fragment {
             Log.d(TAG, "searchDevices: Unable to Search Peers");
             Log.d(TAG, "searchDevices: " + e);
         }
+    }
+
+    @Override
+    public void onClick(View v) {
+        if(v == searchDevicesButton)
+            searchDevices();
+        if(v == backButton)
+            navController.navigateUp();
     }
 }

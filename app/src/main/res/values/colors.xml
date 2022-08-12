@@ -8,9 +8,15 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="blue_primary">#004CFF</color>
+    <color name="blue_primary_light">#C9E7EE</color>
     <color name="blue_secondary">#739CFA</color>
     <color name="blue_secondary_dark">#4E6AAA</color>
+    <color name="blue_secondary_light">#DBE7F5</color>
     <color name="peach">#F17079</color>
+    <color name="peach_light">#F8DEDE</color>
     <color name="peach_dark">#9A474C</color>
     <color name="yellow">#FFD46D</color>
+    <color name="yellow_light">#F8F8E7</color>
+    <color name="off_white">#E6E6E6</color>
+    <color name="gray">#CCCCCC</color>
 </resources>

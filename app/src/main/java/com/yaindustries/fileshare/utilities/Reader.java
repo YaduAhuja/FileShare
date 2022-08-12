@@ -91,7 +91,7 @@ public class Reader {
         }
 
         uiElements.activity.runOnUiThread(() -> {
-            uiElements.progressBar.setProgress(progress);
+            uiElements.progressBar.setProgress(progress, true);
             final String progressMessage = progress+" %";
             uiElements.progressTv.setText(progressMessage);
         });

@@ -26,12 +26,11 @@ public class TransferFragment extends Fragment {
 
     private NavController navController;
     private MainActivity mainActivity;
-    private TextView fileDetailsTextView, progressDetailsTextView;
+    private TextView fileDetailsTextView, progressDetailsTextView, pageDescriptor;
     private ProgressBar fileTransferProgressBar;
     private ConnectionHelper connectionHelper;
 
-    public TransferFragment() {
-    }
+    public TransferFragment() {}
 
 
     @Override
@@ -57,12 +56,15 @@ public class TransferFragment extends Fragment {
         //Data Members
         mainActivity = (MainActivity) getActivity();
         connectionHelper = mainActivity.connectionHelper;
-        navController = Navigation.findNavController(view);
 
         //Ui Elements
         fileDetailsTextView = view.findViewById(R.id.textViewTransferFileDetails);
         fileTransferProgressBar = view.findViewById(R.id.fileTransferProgressBar);
         progressDetailsTextView = view.findViewById(R.id.textViewProgressBar);
+        pageDescriptor = view.findViewById(R.id.transferFragmentPageDescriptorTv);
+
+        if(!mainActivity.sending)
+            pageDescriptor.setText(R.string.receiving);
     }
 
     private void startSending() {
