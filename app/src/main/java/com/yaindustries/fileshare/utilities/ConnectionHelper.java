@@ -7,6 +7,7 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.yaindustries.fileshare.exceptions.NoPortAvailableException;
+import com.yaindustries.fileshare.models.FileMetaData;
 import com.yaindustries.fileshare.models.TransferUiElements;
 
 import java.io.DataInputStream;
@@ -18,6 +19,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.List;
 
 public class ConnectionHelper {
     private static final int START_PORT = 65535;
@@ -98,7 +100,7 @@ public class ConnectionHelper {
      * @param detailsView UI Element where the filename is to be shown
      * @throws IOException
      */
-    public void readDataFromSocket(TransferUiElements uiElements, TextView detailsView) throws IOException {
+    public void readDataFromSocket(TransferUiElements uiElements, TextView detailsView, List<FileMetaData> fileMetaDataList) throws IOException {
         var metaData = Reader.readFileMetaDataFromNetworkStream(socketInput);
         uiElements.activity.runOnUiThread(() -> detailsView.setText("Now Receiving : " + metaData.name));
         File f = new File(Utils.getDataDirectoryPath() + metaData.name);
@@ -107,7 +109,12 @@ public class ConnectionHelper {
         var fileOutput = new DataOutputStream(new FileOutputStream(f));
         Reader.readBlockFromNetworkStream(socketInput, fileOutput, uiElements);
         fileOutput.close();
-        uiElements.activity.runOnUiThread(() -> Utils.showToast(uiElements.activity, "File Transfer Successful"));
+        if(fileMetaDataList != null)
+            fileMetaDataList.add(metaData);
+    }
+
+    public void readDataFromSocket(TransferUiElements uiElements, TextView detailsView) throws IOException {
+        readDataFromSocket(uiElements, detailsView, null);
     }
 
     /**
